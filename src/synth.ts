@@ -3,12 +3,14 @@ export class Synth {
   decay: number;
   sustain: number;
   release: number;
-  volume: number
+  volume: number;
   waveform: OscillatorType;
   private _osc: OscillatorNode | undefined;
   private _gainNode: GainNode | undefined;
+  private _audioContext: AudioContext;
+  private _freq: number | undefined;
 
-  constructor() {
+  constructor(audioContext: AudioContext) {
     this.attack = 0 ;
     this.decay = 0;
     this.sustain = 0;
@@ -17,6 +19,8 @@ export class Synth {
     this.volume = 0;
     this._osc = undefined;
     this._gainNode = undefined;
+    this._freq = 0;
+    this._audioContext = audioContext;
   }
 
   public updateValues(
@@ -25,6 +29,7 @@ export class Synth {
     sustain: number,
     release: number,
     volume: number,
+    freq: number | undefined,
     waveform: OscillatorType,
   ): void {
 
@@ -32,25 +37,26 @@ export class Synth {
     this.decay = decay;
     this.sustain = sustain;
     this.release = release;
+    this._freq = freq
     this.waveform = waveform;
     this.volume = volume;
-
-    console.log(this);
 
   }
 
 
   public noteOn() {
-    let context = new AudioContext();
-
-    this._osc = context.createOscillator();
-    this._gainNode = context.createGain();
+    this._osc = this._audioContext.createOscillator();
+    this._gainNode = this._audioContext.createGain();
     this._osc.type = this.waveform;
     
     this._osc.connect(this._gainNode);
-    this._gainNode.connect(context.destination);
+    this._gainNode.connect(this._audioContext.destination);
 
-    let now = context.currentTime;
+    let now = this._audioContext.currentTime;
+
+    if (this._freq != undefined) {
+      this._osc.frequency.setValueAtTime(this._freq, now);
+    }
 
     this._gainNode.gain.cancelScheduledValues(now);
     this._gainNode.gain.setValueAtTime(0, now);
@@ -63,11 +69,12 @@ export class Synth {
   }
 
   public noteOff() {
-    let now = (new AudioContext()).currentTime;
+    let now = this._audioContext.currentTime;
     this._gainNode?.gain.cancelScheduledValues(now);
     this._gainNode?.gain.setValueAtTime(this._gainNode?.gain.value, now);
     this._gainNode?.gain.linearRampToValueAtTime(0, now + this.release);
     this._osc?.stop(now + this.release);
+
   }
 
 }
