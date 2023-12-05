@@ -7,6 +7,8 @@ export interface SynthState {
   release: number;
   volume: number;
   waveform: OscillatorType;
+  delay: number;
+  cutoff: number;
 }
 
 export class SynthView {
@@ -17,6 +19,8 @@ export class SynthView {
   volumeElement: HTMLInputElement;
   keyboardElements: HTMLButtonElement[];
   waveformElements: NodeListOf<HTMLInputElement>;
+  delayElement: HTMLInputElement;
+  cutoffElement: HTMLInputElement;
 
 
   constructor() {
@@ -25,6 +29,8 @@ export class SynthView {
     this.sustainElement = <HTMLInputElement>document.getElementById('sustain');
     this.releaseElement = <HTMLInputElement>document.getElementById('release');
     this.volumeElement = <HTMLInputElement>document.getElementById('volume');
+    this.delayElement = <HTMLInputElement>document.getElementById('delay');
+    this.cutoffElement = <HTMLInputElement>document.getElementById('cutoff');
     this.waveformElements = document.querySelectorAll<HTMLInputElement>('input[type="waveform"]');
     this.keyboardElements = [];
   }
@@ -58,7 +64,7 @@ export class SynthView {
   
   getSynthState(): SynthState {
     
-    let waveform: OscillatorType = 'sine';
+    let waveform: OscillatorType = 'square';
 
     for (let i = 0; i < this.waveformElements.length; i++) {
       if (this.waveformElements[i].checked) {
@@ -73,7 +79,9 @@ export class SynthView {
       "sustain": parseFloat(this.sustainElement.value),
       "release": parseFloat(this.releaseElement.value),
       "volume": parseFloat(this.volumeElement.value),
-      "waveform": waveform
+      "waveform": waveform,
+      "delay": parseFloat(this.delayElement.value),
+      "cutoff": parseFloat(this.cutoffElement.value),
       
     }
 
