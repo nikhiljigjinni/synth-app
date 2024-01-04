@@ -16,6 +16,15 @@ body {
   background: #FFFFFF;
 }
 
+.header {
+  display: flex;
+  z-index: 2;
+  text-align: center;
+  padding-top: 10px;
+  padding-bottom: 5px;
+  box-shadow: 0 2px 2px -2px gray;
+}
+
 .container h2 {
   /* text-shadow: 1px 1px black; */
   text-align: center;
@@ -24,7 +33,7 @@ body {
   padding-bottom: 5px;
   z-index: 2;
   background-color: #fefefe;
-  box-shadow: 0 2px 2px -2px gray;
+  
 }
 
 .oscillator {

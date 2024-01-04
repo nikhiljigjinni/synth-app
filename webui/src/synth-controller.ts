@@ -1,5 +1,6 @@
-import { SynthView, SynthState } from "./synth-view";
+import { SynthView, SynthState, PresetResponse } from "./synth-view";
 import { FREQ_MAP } from "./utilities";
+import { ApiService } from "./api";
 
 export class SynthController {
   view: SynthView;
@@ -16,9 +17,18 @@ export class SynthController {
     this.gainNode = undefined;
     this.filterNode = undefined;
 
+    this.loadInitialData();
     this.view.createKeyboard(FREQ_MAP);
     this.view.setupKeyboardCallback(this.noteOn, this.noteOff);
+    this.view.setupPresetCallback();
 
+  }
+
+  loadInitialData() {
+    ApiService.get("presets")
+    .then(data => {
+      this.view.createPresetList(data);
+    });
   }
 
   noteOn = (note: string) => {

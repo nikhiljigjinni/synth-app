@@ -1,4 +1,5 @@
 // import { FREQ_MAP } from "./utilities";
+import { ApiService } from "./api";
 
 export interface SynthState {
   attack: number;
@@ -11,6 +12,14 @@ export interface SynthState {
   cutoff: number;
 }
 
+export interface PresetResponse {
+  name: string;
+  attack: number;
+  decay: number;
+  sustain: number;
+  release: number;
+}  
+
 export class SynthView {
   attackElement: HTMLInputElement;
   decayElement: HTMLInputElement;
@@ -18,10 +27,11 @@ export class SynthView {
   releaseElement: HTMLInputElement;
   volumeElement: HTMLInputElement;
   keyboardElements: HTMLButtonElement[];
+  presets: Map<string, PresetResponse>;
   waveformElements: NodeListOf<HTMLInputElement>;
   delayElement: HTMLInputElement;
   cutoffElement: HTMLInputElement;
-
+  presetElement: HTMLSelectElement;
 
   constructor() {
     this.attackElement = <HTMLInputElement>document.getElementById('attack');
@@ -31,12 +41,14 @@ export class SynthView {
     this.volumeElement = <HTMLInputElement>document.getElementById('volume');
     this.delayElement = <HTMLInputElement>document.getElementById('delay');
     this.cutoffElement = <HTMLInputElement>document.getElementById('cutoff');
+    this.presetElement = <HTMLSelectElement>document.getElementById('presets');
     this.waveformElements = document.querySelectorAll<HTMLInputElement>('input[type="waveform"]');
     this.keyboardElements = [];
+    this.presets = new Map<string, PresetResponse>();
   }
 
   createKeyboard(freqMap: Map<string, number>) {
-    let keyboardParentElement = <HTMLDivElement>document.getElementById("keyboard")
+    let keyboardParentElement = <HTMLDivElement>document.getElementById("keyboard");
 
     for (const pianoNote of freqMap.keys()) {
       let pianoKeyButton = <HTMLButtonElement>document.createElement('button');
@@ -48,6 +60,31 @@ export class SynthView {
       this.keyboardElements.push(pianoKeyButton);
     }
 
+  }
+
+  createPresetList(data: Array<PresetResponse>) { 
+    for (let i = 0; i < data.length; i++) {
+      let presetOptionElement = <HTMLOptionElement>document.createElement('option');
+      presetOptionElement.setAttribute('value', data[i].name);
+      presetOptionElement.innerText = data[i].name;
+
+      this.presetElement.appendChild(presetOptionElement);
+      this.presets.set(data[i].name, data[i]);
+    }
+  }
+
+  setupPresetCallback() {
+    this.presetElement.addEventListener('change', () => {
+      let selectedOption = this.presetElement.options[this.presetElement.selectedIndex];
+      if (this.presets.has(selectedOption.value)) {
+        let selectedPreset = this.presets.get(selectedOption.value)!;
+        this.attackElement.value = selectedPreset?.attack.toString();
+        this.decayElement.value = selectedPreset?.decay.toString();
+        this.sustainElement.value = selectedPreset?.sustain.toString();
+        this.releaseElement.value = selectedPreset?.release.toString();
+      }
+      // console.log("Selected Value:", this.presets.get(selectedOption.value));
+    });
   }
 
   setupKeyboardCallback(noteOnCallback: (note: string) => void, noteOffCallback: () => void) {
@@ -90,86 +127,3 @@ export class SynthView {
   }
 
 };
-
-
-// export class Synth {
-//   attack: number;
-//   decay: number;
-//   sustain: number;
-//   release: number;
-//   volume: number;
-//   waveform: OscillatorType;
-//   private _osc: OscillatorNode | undefined;
-//   private _gainNode: GainNode | undefined;
-//   private _audioContext: AudioContext;
-//   private _freq: number | undefined;
-//
-//   constructor(audioContext: AudioContext) {
-//     this.attack = 0 ;
-//     this.decay = 0;
-//     this.sustain = 0;
-//     this.release = 0;
-//     this.waveform = "sine";
-//     this.volume = 0;
-//     this._osc = undefined;
-//     this._gainNode = undefined;
-//     this._freq = 0;
-//     this._audioContext = audioContext;
-//   }
-//
-//   public updateValues(
-//     attack: number,
-//     decay: number,
-//     sustain: number,
-//     release: number,
-//     volume: number,
-//     freq: number | undefined,
-//     waveform: OscillatorType,
-//   ): void {
-//
-//     this.attack = attack;
-//     this.decay = decay;
-//     this.sustain = sustain;
-//     this.release = release;
-//     this._freq = freq
-//     this.waveform = waveform;
-//     this.volume = volume;
-//
-//   }
-//
-//
-//   public noteOn() {
-//     this._osc = this._audioContext.createOscillator();
-//     this._gainNode = this._audioContext.createGain();
-//     this._osc.type = this.waveform;
-//    
-//     this._osc.connect(this._gainNode);
-//     this._gainNode.connect(this._audioContext.destination);
-//
-//     let now = this._audioContext.currentTime;
-//
-//     if (this._freq != undefined) {
-//       this._osc.frequency.setValueAtTime(this._freq, now);
-//     }
-//
-//     this._gainNode.gain.cancelScheduledValues(now);
-//     this._gainNode.gain.setValueAtTime(0, now);
-//
-//     this._gainNode.gain.linearRampToValueAtTime(this.volume, now + this.attack);
-//     // this._gainNode.gain.linearRampToValueAtTime(this.sustain, now + this.attack + this.decay);
-//     this._gainNode.gain.setTargetAtTime(this.sustain*this.volume, now + this.attack, this.decay);
-//     this._osc.start(now);
-//
-//   }
-//
-//   public noteOff() {
-//     let now = this._audioContext.currentTime;
-//     this._gainNode?.gain.cancelScheduledValues(now);
-//     this._gainNode?.gain.setValueAtTime(this._gainNode?.gain.value, now);
-//     this._gainNode?.gain.linearRampToValueAtTime(0, now + this.release);
-//     this._osc?.stop(now + this.release);
-//
-//   }
-//
-// }
-//
