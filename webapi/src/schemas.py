@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class Preset(BaseModel):
-    id: int
+    # id: int
     name: str
     attack: float
     decay: float

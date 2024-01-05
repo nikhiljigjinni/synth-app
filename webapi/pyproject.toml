@@ -8,9 +8,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 fastapi = "^0.108.0"
-uvicorn = {extras = ["standard"], version = "^0.25.0"}
 sqlalchemy = "^2.0.24"
 psycopg2 = "^2.9.9"
+uvicorn = "^0.25.0"
 
 
 [build-system]

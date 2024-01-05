@@ -33,3 +33,8 @@ def get_db():
 def get_presets(db: Session = Depends(get_db)):
     presets = crud.get_presets(db)
     return presets
+
+@app.post("/presets/")
+def create_preset(preset: schemas.Preset, db: Session = Depends(get_db)):
+    saved_preset = crud.create_preset(db, preset)
+    return saved_preset

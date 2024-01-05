@@ -12,6 +12,15 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_USER=postgres
 
+  webapi:
+    build:
+      context: ./webapi
+      dockerfile: Dockerfile
+    ports:
+     - 8000:8000
+    depends_on:
+      - postgres
+
 volumes:
   postgres-data:
     driver: local
