@@ -20,6 +20,16 @@ services:
      - 8000:8000
     depends_on:
       - postgres
+  
+  webui:
+    build:
+      context: ./webui
+      dockerfile: Dockerfile
+    ports:
+     - 8080:8080
+    depends_on:
+      - postgres
+      - webapi
 
 volumes:
   postgres-data:
