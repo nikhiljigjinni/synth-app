@@ -15,6 +15,22 @@ export const FREQ_MAP = new Map<string, number>([
   ]
 );
 
+export const KEYS_TO_FREQ = new Map<string, string> ([
+    ["a", "C3"],
+    ["w","C#3"],
+    ["s","D3"],
+    ["e","D#3"],
+    ["d","E3"],
+    ["f","F3"],
+    ["t","F#3"],
+    ["g","G3"],
+    ["y","G#3"],
+    ["h","A3"],
+    ["u","A#3"],
+    ["j","B3"],
+    ["k","C4"]
+])
+
 export function domReady(callback: () => void): void {
   if (document.readyState !== 'loading') {
     callback();
@@ -23,3 +39,20 @@ export function domReady(callback: () => void): void {
     document.addEventListener('DOMContentLoaded', callback);
   }
 };
+
+export function createParam(name: string, min: number, max: number, step: number, value: number): HTMLInputElement {
+
+  if (min >= max) {
+    throw new Error("ERROR: min value of param is greater than the max value");
+  }
+  let paramElement = document.createElement('input');
+  paramElement.type = 'range';
+  paramElement.min = min.toString();
+  paramElement.max = max.toString();
+  paramElement.step = step.toString();
+  paramElement.value = value.toString();
+  paramElement.name = name;
+  paramElement.id = name;
+
+  return paramElement;
+}
