@@ -1,3 +1,8 @@
+export interface ParamElement {
+  rangeElement: HTMLInputElement;
+  labelElement: HTMLLabelElement;
+}
+
 export const FREQ_MAP = new Map<string, number>([
     ["C3", 130.81],
     ["C#3", 138.59],
@@ -40,19 +45,26 @@ export function domReady(callback: () => void): void {
   }
 };
 
-export function createParam(name: string, min: number, max: number, step: number, value: number): HTMLInputElement {
+export function createParam(name: string, min: number, max: number, step: number, value: number, labelName: string): ParamElement {
 
   if (min >= max) {
     throw new Error("ERROR: min value of param is greater than the max value");
   }
-  let paramElement = document.createElement('input');
-  paramElement.type = 'range';
-  paramElement.min = min.toString();
-  paramElement.max = max.toString();
-  paramElement.step = step.toString();
-  paramElement.value = value.toString();
-  paramElement.name = name;
-  paramElement.id = name;
+  let rangeElement = document.createElement('input');
+  rangeElement.type = 'range';
+  rangeElement.min = min.toString();
+  rangeElement.max = max.toString();
+  rangeElement.step = step.toString();
+  rangeElement.value = value.toString();
+  rangeElement.name = name;
+  rangeElement.id = name;
 
-  return paramElement;
+  let labelElement = document.createElement('label');
+  labelElement.setAttribute('for', name);
+  labelElement.textContent = labelName;
+
+  return {
+    rangeElement: rangeElement,
+    labelElement: labelElement
+  } as ParamElement;
 }

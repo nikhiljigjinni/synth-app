@@ -3,55 +3,60 @@ import { FREQ_MAP } from "./utilities";
 
 export class SynthController {
     view: SynthView;
-    private osc: OscillatorNode | undefined;
-    private gainNode: GainNode | undefined;
+    private oscNodes: Map<string, OscillatorNode>;
+    private gainNodes: Map<string, GainNode>;
     private audioContext: AudioContext;
-    private playedOsc: any;
 
     constructor(view: SynthView) {
         this.view = view;
+        this.oscNodes = new Map<string, OscillatorNode>();
+        this.gainNodes = new Map<string, GainNode>();
         this.audioContext = new AudioContext();
         this.view.setupKeyboardCallback(this.noteOn, this.noteOff);
-        this.playedOsc = {};
     }
 
   noteOn = (note: string) => {
     let synthState = this.view.getSynthState();
-    this.osc = this.audioContext.createOscillator();
-    this.gainNode = this.audioContext.createGain();
-    this.osc.type = synthState.oscState.oscType as OscillatorType;
+    let oscNode = this.audioContext.createOscillator();
+    let gainNode = this.audioContext.createGain();
+
+    oscNode.type = synthState.oscState.oscType as OscillatorType;
     const env = synthState.oscState.adsrEnv;
 
-    this.osc.connect(this.gainNode);
-    this.gainNode.connect(this.audioContext.destination);
+    oscNode.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
 
     let now = this.audioContext.currentTime;
-    this.osc.frequency.setValueAtTime(FREQ_MAP.get(note) ?? 0, now);
-    this.gainNode.gain.cancelScheduledValues(now);
-    this.gainNode.gain.setValueAtTime(0, now);
+    oscNode.frequency.setValueAtTime(FREQ_MAP.get(note) ?? 0, now);
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(0, now);
 
-    this.gainNode.gain.linearRampToValueAtTime(synthState.volume, now + env.attack);
-    this.gainNode.gain.setTargetAtTime(env.sustain*synthState.volume, now + env.attack, env.decay);
-    this.osc.start(now);
+    gainNode.gain.linearRampToValueAtTime(synthState.volume, now + env.attack);
+    gainNode.gain.setTargetAtTime(env.sustain*synthState.volume, now + env.attack, env.decay);
+    oscNode.start(now);
 
-    this.playedOsc[note] = {osc: this.osc, gain: this.gainNode};
+    this.oscNodes.set(note, oscNode);
+    this.gainNodes.set(note, gainNode);
 
   }
 
   noteOff = (note: string) => {
 
-    if (this.playedOsc[note]) {
+    if (this.oscNodes.has(note)) {
       let synthState = this.view.getSynthState();
       const env = synthState.oscState.adsrEnv;
+
+      let oscNode = this.oscNodes.get(note);
+      let gainNode = this.gainNodes.get(note)!;
+
       let now = this.audioContext.currentTime;
+      gainNode.gain.cancelScheduledValues(now);
+      gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+      gainNode.gain.linearRampToValueAtTime(0.0, now + env.release);
+      oscNode?.stop(now + env.release);
 
-      const {osc, gainNode} = this.playedOsc[note]!;
-      gainNode?.gain.cancelScheduledValues(now);
-      gainNode?.gain.setValueAtTime(gainNode?.gain.value, now);
-      gainNode?.gain.linearRampToValueAtTime(0, now + env.release);
-      osc?.stop(now + env.release);
-
-      delete this.playedOsc[note];
+      this.oscNodes.delete(note);
+      this.gainNodes.delete(note);
 
     }
 

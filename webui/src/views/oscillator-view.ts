@@ -1,3 +1,5 @@
+import { createParam } from "../utilities";
+
 enum OscType {
     sine = "sine",
     square = "square",
@@ -14,7 +16,7 @@ export interface ADSREnvelope {
 
 export interface OscillatorState {
     oscType: OscType;
-    adsrEnv: ADSREnvelope
+    adsrEnv: ADSREnvelope;
 }
 
 export class OscillatorView {
@@ -42,17 +44,17 @@ export class OscillatorView {
 
         waveforms.forEach((key, index) => {
 
-        let radioInput = document.createElement('input');
-        radioInput.type = 'radio';
-        radioInput.name = 'osc-type';
-        radioInput.value = key as string;
+            let radioInput = document.createElement('input');
+            radioInput.type = 'radio';
+            radioInput.name = 'osc-type';
+            radioInput.value = key as string;
 
-        const label = document.createElement('label');
-        label.setAttribute('for', key);
-        label.textContent = key;
+            const label = document.createElement('label');
+            label.setAttribute('for', key);
+            label.textContent = key;
 
-        waveformDiv.appendChild(label);
-        waveformDiv.appendChild(radioInput);
+            waveformDiv.appendChild(label);
+            waveformDiv.appendChild(radioInput);
 
         });
 
@@ -67,37 +69,21 @@ export class OscillatorView {
         adsrEnvDiv.setAttribute('class', 'osc-adsr-env');
     
         // this would ideally be data from the default db preset
-        const oscParams: ADSREnvelope = {
-          attack: 0.2,
-          decay: 0.2,
-          sustain: 0.2,
-          release: 0.2,
-        };
     
-        let min = 0.05;
-        let max = 1;
-    
-        Object.keys(oscParams).forEach(key => {
-    
-          let paramElement = document.createElement('input');
-          paramElement.type = 'range';
-          paramElement.min = min.toString();
-          paramElement.max = max.toString();
-          paramElement.name = key;
-          paramElement.id = key;
-          paramElement.value = '0.4';
-          paramElement.step = '0.01';
+        let attackParam = createParam("attack", 0.01, 5, 0.01, 0.5, "Attack");
+        let decayParam = createParam("decay", 0.01, 5, 0.01, 0.5, "Decay");
+        let sustainParam = createParam("sustain", 0, 1, 0.01, 0.5, "Sustain");
+        let releaseParam = createParam("release", 0.01, 5, 0.01, 0.5, "Release");
 
-          let label = document.createElement('label');
-          label.setAttribute('for', key);
-          label.textContent = key;
+        adsrEnvDiv.appendChild(attackParam.labelElement);
+        adsrEnvDiv.appendChild(attackParam.rangeElement);
+        adsrEnvDiv.appendChild(decayParam.labelElement);
+        adsrEnvDiv.appendChild(decayParam.rangeElement);
+        adsrEnvDiv.appendChild(sustainParam.labelElement);
+        adsrEnvDiv.appendChild(sustainParam.rangeElement);
+        adsrEnvDiv.appendChild(releaseParam.labelElement);
+        adsrEnvDiv.appendChild(releaseParam.rangeElement);
 
-    
-          adsrEnvDiv.appendChild(label);
-          adsrEnvDiv.appendChild(paramElement);
-    
-        });
-    
         let adsrCanvasElement = document.createElement('canvas');
         adsrCanvasElement.setAttribute('class', 'osc-adsr-canvas');
     
@@ -127,7 +113,6 @@ export class OscillatorView {
         let sustainElement = <HTMLInputElement>document.getElementById('sustain')!
         let releaseElement = <HTMLInputElement>document.getElementById('release')!
         let waveformElements = document.querySelectorAll<HTMLInputElement>('input[name="osc-type"]');
-        // console.log(waveformElements);
 
         let oscType = OscType.sine;
 

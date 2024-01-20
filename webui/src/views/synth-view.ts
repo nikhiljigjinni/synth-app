@@ -15,14 +15,12 @@ export class SynthView {
   keyboardElements: HTMLButtonElement[];
   private playedNotes: Set<string>;
 
-  // activeVoices: Map<string, OscillatorNode>;
   constructor() {
     // create oscillators from default preset
     this.oscillatorsElement = <HTMLDivElement>document.getElementById('oscillators');
     this.oscillatorView = new OscillatorView(this.oscillatorsElement);
     this.synthState = this.setDefaultSynthState();
     this.keyboardElements = [];
-    // this.activeVoices = new Map<string, OscillatorNode>();
     this.playedNotes = new Set<string>();
 
     this.createMasterDiv();
@@ -76,14 +74,13 @@ export class SynthView {
 
   createMasterDiv() {
     let masterVolumeElement = <HTMLDivElement>document.getElementById('master-control');
-    let volumeInput = createParam('master-volume', 0.01, 1, 0.01, 0.1);
+    let volumeParam = createParam('master-volume', 0.01, 1, 0.01, 0.1, "Volume");
 
-    let volumeLabel = document.createElement('label');
-    volumeLabel.textContent = 'Volume';
+    // let volumeLabel = document.createElement('label');
+    // volumeLabel.textContent = 'Volume';
   
-    masterVolumeElement.appendChild(volumeLabel);
-    masterVolumeElement.appendChild(volumeInput);
-
+    masterVolumeElement.appendChild(volumeParam.labelElement);
+    masterVolumeElement.appendChild(volumeParam.rangeElement);
   }
 
   createKeyboard(freqMap: Map<string, number>) {
