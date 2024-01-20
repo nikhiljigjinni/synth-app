@@ -1,6 +1,6 @@
 import { domReady } from "./utilities";
 import { SynthController } from "./synth-controller";
-import { SynthView } from "./synth-view";
+import { SynthView } from "./views/synth-view";
 import './styles.css'
 
 let synthView = undefined;

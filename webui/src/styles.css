@@ -1,5 +1,5 @@
 * {
-  margin: 0 auto;
+  margin: 0 0;
   padding: 0;
 }
 
@@ -8,6 +8,7 @@ body {
 }
 
 .container {
+  margin: 0 auto;
   width: 50%;
   height: 400px;
   margin-top: 100px;
@@ -16,7 +17,42 @@ body {
   background: #FFFFFF;
 }
 
-.header {
+.synth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.osc-waveform {
+  border: 1px solid black;
+  padding: 10px 20px;
+}
+
+.osc-waveform input[type="radio"] {
+  margin-right: 1em;
+}
+
+.osc-adsr {
+  padding: 20px;
+  border: 1px solid black;
+  display: flex;
+}
+
+.osc-adsr-env {
+  margin-right: 20px;
+}
+
+.osc-adsr input {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.osc-adsr canvas {
+  background-color: black;
+  border-radius: 10px;
+}
+
+.synth-header {
   display: flex;
   z-index: 2;
   text-align: center;
@@ -27,6 +63,7 @@ body {
 
 .container h2 {
   /* text-shadow: 1px 1px black; */
+  margin: 0 auto;
   text-align: center;
   font-family: 'Roboto', sans-serif;
   padding-top: 10px;
@@ -36,18 +73,33 @@ body {
   
 }
 
-.oscillator {
+#master-control {
+  width: 62.3%;
+  padding: 20px;
+  border: 1px solid black;
+}
+
+/* .oscillator {
   margin: 20px 20px;
+} */
+
+#keyboard {
+  margin-top: 20px;
+  display: flex;
+  border: 1px solid black;
+  width: 100%;
 }
 
 #keyboard button{
+  flex-grow: 1;
+  width: auto;
   border: none;
   height: 80px;
   background-color: #f2f1f0;
 }
 
 #keyboard button[id*='#'] {
-  background-color: black;
+  background-color: grey;
   border: none;
-  height: 40px;
+  height: 80px;
 }
