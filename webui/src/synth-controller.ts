@@ -16,23 +16,29 @@ export class SynthController {
     }
 
   noteOn = (note: string) => {
-    let synthState = this.view.getSynthState();
+    let synthState = this.view.getState();
     let oscNode = this.audioContext.createOscillator();
     let gainNode = this.audioContext.createGain();
+    let filterNode = this.audioContext.createBiquadFilter();
 
     oscNode.type = synthState.oscState.oscType as OscillatorType;
     const env = synthState.oscState.adsrEnv;
 
     oscNode.connect(gainNode);
-    gainNode.connect(this.audioContext.destination);
+    gainNode.connect(filterNode);
+    filterNode.connect(this.audioContext.destination);
 
     let now = this.audioContext.currentTime;
     oscNode.frequency.setValueAtTime(FREQ_MAP.get(note) ?? 0, now);
     gainNode.gain.cancelScheduledValues(now);
     gainNode.gain.setValueAtTime(0, now);
 
-    gainNode.gain.linearRampToValueAtTime(synthState.volume, now + env.attack);
-    gainNode.gain.setTargetAtTime(env.sustain*synthState.volume, now + env.attack, env.decay);
+    filterNode.frequency.setValueAtTime(synthState.filterState.cutoff, now);
+    filterNode.Q.setValueAtTime(synthState.filterState.resonance, now);
+    filterNode.type = "lowpass";
+
+    gainNode.gain.linearRampToValueAtTime(synthState.masterControlState.volume, now + env.attack);
+    gainNode.gain.setTargetAtTime(env.sustain*synthState.masterControlState.volume, now + env.attack, env.decay);
     oscNode.start(now);
 
     this.oscNodes.set(note, oscNode);
@@ -43,7 +49,7 @@ export class SynthController {
   noteOff = (note: string) => {
 
     if (this.oscNodes.has(note)) {
-      let synthState = this.view.getSynthState();
+      let synthState = this.view.getState();
       const env = synthState.oscState.adsrEnv;
 
       let oscNode = this.oscNodes.get(note);
