@@ -35,7 +35,7 @@ export class SynthController {
 
     filterNode.frequency.setValueAtTime(synthState.filterState.cutoff, now);
     filterNode.Q.setValueAtTime(synthState.filterState.resonance, now);
-    filterNode.type = "lowpass";
+    filterNode.type = synthState.filterState.filterType;
 
     gainNode.gain.linearRampToValueAtTime(synthState.masterControlState.volume, now + env.attack);
     gainNode.gain.setTargetAtTime(env.sustain*synthState.masterControlState.volume, now + env.attack, env.decay);

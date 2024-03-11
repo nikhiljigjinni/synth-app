@@ -32,6 +32,14 @@ body {
   margin-right: 1em;
 }
 
+.filter-type {
+  padding: 10px 20px;
+}
+
+.filter-type input[type="radio"] {
+  margin-right: 4.5em;
+}
+
 .osc-adsr {
   padding: 20px;
   border: 1px solid black;
