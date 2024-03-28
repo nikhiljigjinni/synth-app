@@ -1,99 +1,106 @@
 import { FREQ_MAP, KEYS_TO_FREQ, createParam } from "../utilities";
 import { OscillatorState, OscillatorView } from "./oscillator-view";
+import { FilterState, FilterView } from "./filter-view";
+import { MasterControlState, MasterControlView } from "./master-control-view";
 import { ApiService } from "../api";
 
 export interface SynthState {
   oscState: OscillatorState;
-  volume: number;
+  masterControlState: MasterControlState;
+  filterState: FilterState;
 }
 
 export class SynthView {
-  oscillatorsElement: HTMLDivElement;
-  oscillatorView: OscillatorView;
-  volumeElement: HTMLInputElement | null;
-  synthState: SynthState;
+  oscillatorsDiv: HTMLDivElement;
+  filterDiv: HTMLDivElement;
+  masterControlDiv: HTMLDivElement;
+  keyboardDiv: HTMLDivElement;
   keyboardElements: HTMLButtonElement[];
+
+  synthState: SynthState;
+  oscillatorView: OscillatorView;
+  filterView: FilterView;
+  masterControlView: MasterControlView;
   private playedNotes: Set<string>;
 
   constructor() {
-    // create oscillators from default preset
-    this.oscillatorsElement = <HTMLDivElement>document.getElementById('oscillators');
-    this.oscillatorView = new OscillatorView(this.oscillatorsElement);
-    this.synthState = this.setDefaultSynthState();
+    // initialize Div containers
+    this.oscillatorsDiv = document.getElementById('oscillators') as HTMLDivElement;
+    this.filterDiv = document.getElementById('master-filter') as HTMLDivElement;
+    this.masterControlDiv = document.getElementById('master-control') as HTMLDivElement;
+    this.keyboardDiv = document.getElementById('keyboard') as HTMLDivElement;
+
+    // initialize keyboard elements
     this.keyboardElements = [];
     this.playedNotes = new Set<string>();
 
-    this.createMasterDiv();
+    // defining views
+    this.oscillatorView = new OscillatorView(this.oscillatorsDiv);
+    this.filterView = new FilterView(this.filterDiv);
+    this.masterControlView = new MasterControlView(this.masterControlDiv);
+
+    this.synthState = this.setDefaultSynthState();
+
     this.createKeyboard(FREQ_MAP);
-    let masterVolumeElement =  <HTMLDivElement>document.getElementById('master-control')!;
-    this.volumeElement = masterVolumeElement.querySelector('input[type="range"]')!;
     this.setupParamCallbacks();
 
   }
 
   setupParamCallbacks() {
-    let oscParams = this.oscillatorsElement.querySelectorAll('input[type="range"], input[type="radio"]');
+    let oscParams = [...this.oscillatorsDiv.querySelectorAll('input[type="range"], input[type="radio"]')];
+    let filterParams = [...this.filterDiv.querySelectorAll('input[type="range"], input[type="radio"]')];
+    let masterControlParams = [...this.masterControlDiv.querySelectorAll('input[type="range"], input[type="radio"]')];
 
-    oscParams.forEach(paramElement => {
+    let synthParams = [
+      ...oscParams,
+      ...filterParams,
+      ...masterControlParams
+    ];
+
+    synthParams.forEach(paramElement => {
       paramElement.addEventListener('input', (e) => {
-        this.oscillatorView.updateOscillatorState();
         this.updateSynthState();
       });
     });
 
-    this.volumeElement?.addEventListener('input', (e) => {
-      this.updateSynthState();
-    });
+  }
+
+  getState() {
+    return this.synthState;
   }
 
   setDefaultSynthState() {
     return {
-      oscState: this.oscillatorView.getOscillatorState(),
-      volume: 0,
+      oscState: this.oscillatorView.getState(),
+      filterState: this.filterView.getState(),
+      masterControlState: this.masterControlView.getState(),
     } as SynthState;
   }
 
   updateSynthState() {
-    console.log(this);
-    let oscState = this.oscillatorView.getOscillatorState();
-    let volume = 0;
-    if (this.volumeElement) {
-      volume = parseFloat(this.volumeElement.value);
-    }
+    let oscState = this.oscillatorView.getState();
+    let filterState = this.filterView.getState();
+    let masterControlState = this.masterControlView.getState();
 
     this.synthState = {
       oscState: oscState,
-      volume: volume
+      filterState: filterState,
+      masterControlState: masterControlState
     };
 
   }
 
-  getSynthState() {
-    return this.synthState;
-  }
-
-  createMasterDiv() {
-    let masterVolumeElement = <HTMLDivElement>document.getElementById('master-control');
-    let volumeParam = createParam('master-volume', 0.01, 1, 0.01, 0.1, "Volume");
-
-    // let volumeLabel = document.createElement('label');
-    // volumeLabel.textContent = 'Volume';
-  
-    masterVolumeElement.appendChild(volumeParam.labelElement);
-    masterVolumeElement.appendChild(volumeParam.rangeElement);
-  }
-
   createKeyboard(freqMap: Map<string, number>) {
-    let keyboardParentElement = <HTMLDivElement>document.getElementById("keyboard");
 
     for (const pianoNote of freqMap.keys()) {
-      let pianoKeyButton = <HTMLButtonElement>document.createElement('button');
+      let pianoKeyButton = document.createElement('button');
       pianoKeyButton.setAttribute('id', pianoNote);
       pianoKeyButton.setAttribute('class', "keyboard-button");
       pianoKeyButton.innerText = pianoNote;
 
-      keyboardParentElement.appendChild(pianoKeyButton);
+      this.keyboardDiv.appendChild(pianoKeyButton);
       this.keyboardElements.push(pianoKeyButton);
+      console.log("Creating keys");
     }
   }
 
@@ -137,5 +144,5 @@ export class SynthView {
             });
           }
         );  
-    }
+  }
 }

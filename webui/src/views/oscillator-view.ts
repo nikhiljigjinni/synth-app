@@ -7,6 +7,11 @@ enum OscType {
     triangle = "triangle",
 }
 
+export interface OscillatorState {
+    oscType: OscType;
+    adsrEnv: ADSREnvelope;
+}
+
 export interface ADSREnvelope {
     attack: number;
     decay: number;
@@ -14,25 +19,24 @@ export interface ADSREnvelope {
     release: number;
 }
 
-export interface OscillatorState {
-    oscType: OscType;
-    adsrEnv: ADSREnvelope;
-}
-
 export class OscillatorView {
-    oscDiv: HTMLDivElement | null;
-    oscState: OscillatorState;
+    attackRangeElement: HTMLInputElement;
+    decayRangeElement: HTMLInputElement;
+    sustainRangeElement: HTMLInputElement;
+    releaseRangeElement: HTMLInputElement;
+    waveformElement: HTMLInputElement;
+    oscDiv: HTMLDivElement;
     constructor(parentDiv: HTMLDivElement) {
-        /*
-            1) Create waveform
-            2) Create ADSR envelopes
-        */
-
-        this.oscState = this.setDefaultOscState();
-        this.oscDiv = document.createElement('div')
+        this.oscDiv = document.createElement('div');
         this.oscDiv.setAttribute('class', 'oscillator');
         this.createWaveformSelector();
         this.createADSREnvelope();
+
+        this.attackRangeElement = this.oscDiv.querySelector('input[name="attack"]') as HTMLInputElement;
+        this.decayRangeElement = this.oscDiv.querySelector('input[name="decay"]') as HTMLInputElement;
+        this.sustainRangeElement = this.oscDiv.querySelector('input[name="sustain"]') as HTMLInputElement;
+        this.releaseRangeElement = this.oscDiv.querySelector('input[name="release"]') as HTMLInputElement;
+        this.waveformElement = this.oscDiv.querySelector('input[type="radio"][name="osc-type"]:checked') as HTMLInputElement;
         parentDiv.appendChild(this.oscDiv);
     }
 
@@ -43,11 +47,13 @@ export class OscillatorView {
         waveformDiv.setAttribute('class', 'osc-waveform');
 
         waveforms.forEach((key, index) => {
-
             let radioInput = document.createElement('input');
             radioInput.type = 'radio';
             radioInput.name = 'osc-type';
             radioInput.value = key as string;
+            if (key == OscType.sine) {
+                radioInput.checked = true;
+            }
 
             const label = document.createElement('label');
             label.setAttribute('for', key);
@@ -60,16 +66,15 @@ export class OscillatorView {
 
         this.oscDiv?.appendChild(waveformDiv);
     }
-    
+
     createADSREnvelope() {
         let adsrDiv = document.createElement('div');
         adsrDiv.setAttribute('class', 'osc-adsr');
-    
+
         let adsrEnvDiv = document.createElement('div');
         adsrEnvDiv.setAttribute('class', 'osc-adsr-env');
-    
+
         // this would ideally be data from the default db preset
-    
         let attackParam = createParam("attack", 0.01, 5, 0.01, 0.5, "Attack");
         let decayParam = createParam("decay", 0.01, 5, 0.01, 0.5, "Decay");
         let sustainParam = createParam("sustain", 0, 1, 0.01, 0.5, "Sustain");
@@ -86,59 +91,26 @@ export class OscillatorView {
 
         let adsrCanvasElement = document.createElement('canvas');
         adsrCanvasElement.setAttribute('class', 'osc-adsr-canvas');
-    
         adsrDiv.appendChild(adsrEnvDiv);
         adsrDiv.appendChild(adsrCanvasElement);
-    
-        this.oscDiv?.appendChild(adsrDiv);
 
+        this.oscDiv?.appendChild(adsrDiv);
     }
-    
-    setDefaultOscState() {
+
+    getState() {
+        const adsrState: ADSREnvelope = {
+            attack: parseFloat(this.attackRangeElement.value),
+            decay: parseFloat(this.decayRangeElement.value),
+            sustain: parseFloat(this.sustainRangeElement.value),
+            release: parseFloat(this.releaseRangeElement.value),
+        } as ADSREnvelope;
+
+        let oscType = document.querySelector('input[type="radio"][name="osc-type"]:checked') as HTMLInputElement;
+
         return {
-            oscType: OscType.sine,
-            adsrEnv: {
-                attack: 0.1,
-                decay: 0.1,
-                sustain: 0.1,
-                release: 0.1,
-            }
+            oscType: oscType.value,
+            adsrEnv: adsrState
         } as OscillatorState;
     }
 
-    updateOscillatorState() {
-        // console.log("hello");
-        let attackElement = <HTMLInputElement>document.getElementById('attack')!
-        let decayElement = <HTMLInputElement>document.getElementById('decay')!
-        let sustainElement = <HTMLInputElement>document.getElementById('sustain')!
-        let releaseElement = <HTMLInputElement>document.getElementById('release')!
-        let waveformElements = document.querySelectorAll<HTMLInputElement>('input[name="osc-type"]');
-
-        let oscType = OscType.sine;
-
-        for (let i = 0; i < waveformElements.length; i++) {
-            if (waveformElements[i].checked) {
-                oscType = waveformElements[i].value as OscType;
-                break;
-            }
-        }
-
-        let adsrState: ADSREnvelope = {
-            attack: parseFloat(attackElement.value),
-            decay: parseFloat(decayElement.value),
-            sustain: parseFloat(sustainElement.value),
-            release: parseFloat(releaseElement.value),
-        }
-
-        this.oscState = {
-            oscType: oscType,
-            adsrEnv: adsrState,
-        }
-
-        console.log(this.oscState);
-    }
-
-    getOscillatorState() {
-        return this.oscState;
-    }
 }
