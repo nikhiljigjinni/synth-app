@@ -1,5 +1,6 @@
 import { SynthView } from "./views/synth-view";
 import { FREQ_MAP } from "./utilities";
+import { ApiService } from "./api";
 
 export class SynthController {
     view: SynthView;
@@ -12,8 +13,19 @@ export class SynthController {
         this.oscNodes = new Map<string, OscillatorNode>();
         this.gainNodes = new Map<string, GainNode>();
         this.audioContext = new AudioContext();
+        this.loadInitialData();
         this.view.setupKeyboardCallback(this.noteOn, this.noteOff);
+        this.view.setupPresetCallback();
     }
+
+    loadInitialData() {
+      ApiService.get("presets")
+      .then(data => {
+        this.view.createPresetList(data);
+        this.view.loadInitialPreset();
+      });
+    }
+
 
   noteOn = (note: string) => {
     let synthState = this.view.getState();
@@ -22,7 +34,7 @@ export class SynthController {
     let filterNode = this.audioContext.createBiquadFilter();
 
     oscNode.type = synthState.oscState.oscType as OscillatorType;
-    const env = synthState.oscState.adsrEnv;
+    const oscState = synthState.oscState;
 
     oscNode.connect(gainNode);
     gainNode.connect(filterNode);
@@ -37,8 +49,8 @@ export class SynthController {
     filterNode.Q.setValueAtTime(synthState.filterState.resonance, now);
     filterNode.type = synthState.filterState.filterType;
 
-    gainNode.gain.linearRampToValueAtTime(synthState.masterControlState.volume, now + env.attack);
-    gainNode.gain.setTargetAtTime(env.sustain*synthState.masterControlState.volume, now + env.attack, env.decay);
+    gainNode.gain.linearRampToValueAtTime(synthState.masterState.volume, now + oscState.attack);
+    gainNode.gain.setTargetAtTime(oscState.sustain*synthState.masterState.volume, now + oscState.attack, oscState.decay);
     oscNode.start(now);
 
     this.oscNodes.set(note, oscNode);
@@ -50,7 +62,7 @@ export class SynthController {
 
     if (this.oscNodes.has(note)) {
       let synthState = this.view.getState();
-      const env = synthState.oscState.adsrEnv;
+      const oscState = synthState.oscState;
 
       let oscNode = this.oscNodes.get(note);
       let gainNode = this.gainNodes.get(note)!;
@@ -58,8 +70,8 @@ export class SynthController {
       let now = this.audioContext.currentTime;
       gainNode.gain.cancelScheduledValues(now);
       gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-      gainNode.gain.linearRampToValueAtTime(0.0, now + env.release);
-      oscNode?.stop(now + env.release);
+      gainNode.gain.linearRampToValueAtTime(0.0, now + oscState.release);
+      oscNode?.stop(now + oscState.release);
 
       this.oscNodes.delete(note);
       this.gainNodes.delete(note);

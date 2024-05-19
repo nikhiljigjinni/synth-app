@@ -9,15 +9,12 @@ enum OscType {
 
 export interface OscillatorState {
     oscType: OscType;
-    adsrEnv: ADSREnvelope;
-}
-
-export interface ADSREnvelope {
     attack: number;
     decay: number;
     sustain: number;
     release: number;
 }
+
 
 export class OscillatorView {
     attackRangeElement: HTMLInputElement;
@@ -97,19 +94,22 @@ export class OscillatorView {
         this.oscDiv?.appendChild(adsrDiv);
     }
 
-    getState() {
-        const adsrState: ADSREnvelope = {
-            attack: parseFloat(this.attackRangeElement.value),
-            decay: parseFloat(this.decayRangeElement.value),
-            sustain: parseFloat(this.sustainRangeElement.value),
-            release: parseFloat(this.releaseRangeElement.value),
-        } as ADSREnvelope;
+    setState(state: OscillatorState) {
+        this.attackRangeElement.value = state.attack.toString();
+        this.decayRangeElement.value = state.decay.toString();
+        this.sustainRangeElement.value = state.sustain.toString();
+        this.releaseRangeElement.value = state.release.toString();
+    }
 
+    getState() {
         let oscType = document.querySelector('input[type="radio"][name="osc-type"]:checked') as HTMLInputElement;
 
         return {
             oscType: oscType.value,
-            adsrEnv: adsrState
+            attack: parseFloat(this.attackRangeElement.value),
+            decay: parseFloat(this.decayRangeElement.value),
+            sustain: parseFloat(this.sustainRangeElement.value),
+            release: parseFloat(this.releaseRangeElement.value),
         } as OscillatorState;
     }
 

@@ -59,6 +59,11 @@ export class FilterView {
         parentDiv.appendChild(resonanceParam.rangeElement);
     }
 
+    setState(state: FilterState) {
+        this.cutoffRangeElement.value = state.cutoff.toString();
+        this.resonanceRangeElement.value = state.resonance.toString();        
+    }
+
     getState() {
         let filterType = document.querySelector('input[type="radio"][name="filter-type"]:checked') as HTMLInputElement;
 

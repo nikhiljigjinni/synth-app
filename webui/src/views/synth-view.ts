@@ -1,43 +1,53 @@
 import { FREQ_MAP, KEYS_TO_FREQ, createParam } from "../utilities";
 import { OscillatorState, OscillatorView } from "./oscillator-view";
 import { FilterState, FilterView } from "./filter-view";
-import { MasterControlState, MasterControlView } from "./master-control-view";
+import { MasterState, MasterView } from "./master-control-view";
 import { ApiService } from "../api";
 
 export interface SynthState {
   oscState: OscillatorState;
-  masterControlState: MasterControlState;
+  masterState: MasterState;
   filterState: FilterState;
+}
+
+export interface PresetResponse {
+  id: number;
+  name: string;
+  synthState: SynthState;
 }
 
 export class SynthView {
   oscillatorsDiv: HTMLDivElement;
   filterDiv: HTMLDivElement;
-  masterControlDiv: HTMLDivElement;
+  masterDiv: HTMLDivElement;
   keyboardDiv: HTMLDivElement;
+  presetElement: HTMLSelectElement;
   keyboardElements: HTMLButtonElement[];
 
   synthState: SynthState;
   oscillatorView: OscillatorView;
   filterView: FilterView;
-  masterControlView: MasterControlView;
+  masterView: MasterView;
   private playedNotes: Set<string>;
+  presets: Map<string, PresetResponse>;
 
   constructor() {
     // initialize Div containers
     this.oscillatorsDiv = document.getElementById('oscillators') as HTMLDivElement;
     this.filterDiv = document.getElementById('master-filter') as HTMLDivElement;
-    this.masterControlDiv = document.getElementById('master-control') as HTMLDivElement;
+    this.masterDiv = document.getElementById('master-control') as HTMLDivElement;
     this.keyboardDiv = document.getElementById('keyboard') as HTMLDivElement;
+    this.presetElement = document.getElementById('presets') as HTMLSelectElement;
 
     // initialize keyboard elements
     this.keyboardElements = [];
     this.playedNotes = new Set<string>();
+    this.presets = new Map<string, PresetResponse>();
 
     // defining views
     this.oscillatorView = new OscillatorView(this.oscillatorsDiv);
     this.filterView = new FilterView(this.filterDiv);
-    this.masterControlView = new MasterControlView(this.masterControlDiv);
+    this.masterView = new MasterView(this.masterDiv);
 
     this.synthState = this.setDefaultSynthState();
 
@@ -46,15 +56,51 @@ export class SynthView {
 
   }
 
+  loadInitialPreset() {
+    if (this.presets.has("default")) {
+      let default_preset = this.presets.get("default");
+      if (default_preset != null) {
+        this.oscillatorView.setState(default_preset.synthState.oscState);
+        this.filterView.setState(default_preset.synthState.filterState);
+        this.masterView.setState(default_preset.synthState.masterState);
+        this.updateSynthState();
+      }
+    }
+      
+  }
+
+  createPresetList(data: Array<PresetResponse>) { 
+    for (let i = 0; i < data.length; i++) {
+      let presetOptionElement = <HTMLOptionElement>document.createElement('option');
+      presetOptionElement.setAttribute('value', data[i].name);
+      presetOptionElement.innerText = data[i].name;
+
+      this.presetElement.appendChild(presetOptionElement);
+      this.presets.set(data[i].name, data[i]);
+    }
+  }
+
+  setupPresetCallback() {
+    this.presetElement.addEventListener('change', () => {
+      let selectedOption = this.presetElement.options[this.presetElement.selectedIndex];
+      if (this.presets.has(selectedOption.value)) {
+        let selectedPreset = this.presets.get(selectedOption.value)!;
+        this.oscillatorView.setState(selectedPreset.synthState.oscState);
+        this.filterView.setState(selectedPreset.synthState.filterState);
+        this.masterView.setState(selectedPreset.synthState.masterState);
+      }
+    });
+  }
+
   setupParamCallbacks() {
     let oscParams = [...this.oscillatorsDiv.querySelectorAll('input[type="range"], input[type="radio"]')];
     let filterParams = [...this.filterDiv.querySelectorAll('input[type="range"], input[type="radio"]')];
-    let masterControlParams = [...this.masterControlDiv.querySelectorAll('input[type="range"], input[type="radio"]')];
+    let masterParams = [...this.masterDiv.querySelectorAll('input[type="range"], input[type="radio"]')];
 
     let synthParams = [
       ...oscParams,
       ...filterParams,
-      ...masterControlParams
+      ...masterParams
     ];
 
     synthParams.forEach(paramElement => {
@@ -73,19 +119,19 @@ export class SynthView {
     return {
       oscState: this.oscillatorView.getState(),
       filterState: this.filterView.getState(),
-      masterControlState: this.masterControlView.getState(),
+      masterState: this.masterView.getState(),
     } as SynthState;
   }
 
   updateSynthState() {
     let oscState = this.oscillatorView.getState();
     let filterState = this.filterView.getState();
-    let masterControlState = this.masterControlView.getState();
+    let masterState = this.masterView.getState();
 
     this.synthState = {
       oscState: oscState,
       filterState: filterState,
-      masterControlState: masterControlState
+      masterState: masterState
     };
 
   }
@@ -100,7 +146,6 @@ export class SynthView {
 
       this.keyboardDiv.appendChild(pianoKeyButton);
       this.keyboardElements.push(pianoKeyButton);
-      console.log("Creating keys");
     }
   }
 

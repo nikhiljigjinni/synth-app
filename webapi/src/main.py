@@ -27,11 +27,10 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
+ 
 @app.get("/presets/", response_model=list[schemas.Preset])
 def get_presets(db: Session = Depends(get_db)):
-    presets = crud.get_presets(db)
+    presets: list[schemas.Preset] = crud.get_presets(db)
     return presets
 
 @app.post("/presets/")
