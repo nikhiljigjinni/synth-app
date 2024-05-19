@@ -33,7 +33,7 @@ export class SynthController {
     let gainNode = this.audioContext.createGain();
     let filterNode = this.audioContext.createBiquadFilter();
 
-    oscNode.type = synthState.oscState.oscType as OscillatorType;
+    oscNode.type = synthState.oscState.osc_type as OscillatorType;
     const oscState = synthState.oscState;
 
     oscNode.connect(gainNode);
@@ -47,7 +47,7 @@ export class SynthController {
 
     filterNode.frequency.setValueAtTime(synthState.filterState.cutoff, now);
     filterNode.Q.setValueAtTime(synthState.filterState.resonance, now);
-    filterNode.type = synthState.filterState.filterType;
+    filterNode.type = synthState.filterState.filter_type;
 
     gainNode.gain.linearRampToValueAtTime(synthState.masterState.volume, now + oscState.attack);
     gainNode.gain.setTargetAtTime(oscState.sustain*synthState.masterState.volume, now + oscState.attack, oscState.decay);

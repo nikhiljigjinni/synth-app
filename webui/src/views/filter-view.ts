@@ -9,7 +9,7 @@ enum FilterTypes {
 export interface FilterState {
     cutoff: number;
     resonance: number;
-    filterType: FilterTypes;
+    filter_type: FilterTypes;
 }
 
 export class FilterView {
@@ -61,14 +61,18 @@ export class FilterView {
 
     setState(state: FilterState) {
         this.cutoffRangeElement.value = state.cutoff.toString();
-        this.resonanceRangeElement.value = state.resonance.toString();        
+        this.resonanceRangeElement.value = state.resonance.toString();
+        let radioBtn = document.querySelector(`input[type="radio"][name="filter-type"][value="${state.filter_type as string}"]`) as HTMLInputElement;
+        if (radioBtn != null) {
+            radioBtn.checked = true;
+        } 
     }
 
     getState() {
-        let filterType = document.querySelector('input[type="radio"][name="filter-type"]:checked') as HTMLInputElement;
+        let filterTypeElem = document.querySelector('input[type="radio"][name="filter-type"]:checked') as HTMLInputElement;
 
         return {
-            filterType: filterType.value,
+            filter_type: filterTypeElem.value,
             cutoff: parseFloat(this.cutoffRangeElement.value),
             resonance: parseFloat(this.resonanceRangeElement.value)
         } as FilterState;

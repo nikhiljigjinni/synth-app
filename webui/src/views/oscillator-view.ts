@@ -8,7 +8,7 @@ enum OscType {
 }
 
 export interface OscillatorState {
-    oscType: OscType;
+    osc_type: OscType;
     attack: number;
     decay: number;
     sustain: number;
@@ -99,13 +99,18 @@ export class OscillatorView {
         this.decayRangeElement.value = state.decay.toString();
         this.sustainRangeElement.value = state.sustain.toString();
         this.releaseRangeElement.value = state.release.toString();
+        console.log(state.osc_type as string);
+        let radioBtn = this.oscDiv.querySelector(`input[type="radio"][name="osc-type"][value="${state.osc_type as string}"]`) as HTMLInputElement;
+        if (radioBtn != null) {
+            radioBtn.checked = true;
+        }
     }
 
     getState() {
-        let oscType = document.querySelector('input[type="radio"][name="osc-type"]:checked') as HTMLInputElement;
+        let oscTypeElem = document.querySelector('input[type="radio"][name="osc-type"]:checked') as HTMLInputElement;
 
         return {
-            oscType: oscType.value,
+            osc_type: oscTypeElem.value,
             attack: parseFloat(this.attackRangeElement.value),
             decay: parseFloat(this.decayRangeElement.value),
             sustain: parseFloat(this.sustainRangeElement.value),

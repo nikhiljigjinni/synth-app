@@ -59,6 +59,7 @@ export class SynthView {
   loadInitialPreset() {
     if (this.presets.has("default")) {
       let default_preset = this.presets.get("default");
+      console.log(default_preset?.synthState.oscState.osc_type);
       if (default_preset != null) {
         this.oscillatorView.setState(default_preset.synthState.oscState);
         this.filterView.setState(default_preset.synthState.filterState);
