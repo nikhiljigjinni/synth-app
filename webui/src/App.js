@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import Param from './Param'
 import Keyboard from './Keyboard';
 
@@ -38,6 +38,8 @@ export default function App() {
   const oscNodes = useRef(new Map());
   const filterNode = useRef(null);
 
+  const [synthType, setSynthType] = useState('sine');
+  const [filterType, setFilterType] = useState('lowpass');
   const [synthState, setSynthState] = useState({
     attack: 0 ,
     decay: 2,
@@ -47,6 +49,14 @@ export default function App() {
     resonance: 0,
     volume: 0.5,
   });
+
+  const handleSynthType = (e) => {
+    setSynthType(e.target.value);
+  }
+
+  const handleFilterType = (e) => {
+    setFilterType(e.target.value);
+  }
 
   function handleInput(e, labelName) {
     const stateCopy = {...synthState};
@@ -60,12 +70,16 @@ export default function App() {
     const note = e.target.name;
 
     // possible cleanup of audio nodes here
+    if (oscNodes.current.has(note) && gainNodes.current.has(note)){
+      delete oscNodes.current[note];
+      delete gainNodes.current[note];
+    }
 
     let oscNode = audioContext.current.createOscillator();
     let gainNode = audioContext.current.createGain();
     filterNode.current = audioContext.current.createBiquadFilter();
 
-    oscNode.type = "sawtooth";
+    oscNode.type = synthType;
 
     oscNode.connect(filterNode.current);
     filterNode.current.connect(gainNode);
@@ -76,7 +90,7 @@ export default function App() {
     gainNode.gain.cancelScheduledValues(now);
     gainNode.gain.setValueAtTime(0, now);
 
-    filterNode.current.type = "lowpass";
+    filterNode.current.type = filterType;
     filterNode.current.frequency.setValueAtTime(synthState.cutoff, now);
 
 
@@ -109,12 +123,27 @@ export default function App() {
   return (
     <>
       <h1>Synth App</h1>
+
+      <select name="synth-type" value={synthType} onChange={handleSynthType}>
+        <option value="sine">Sine</option>
+        <option value="sawtooth">Sawtooth</option>
+        <option value="square">Square</option>
+        <option value="triangle">Triangle</option>
+      </select>
       <div className='envelope'>
         <Param labelName="attack" min="0" max="5" step="0.01" value={synthState.attack} onHandleInput={(e) => handleInput(e, "attack")}/>
         <Param labelName="decay" min="0" max="5" step="0.01" value={synthState.decay} onHandleInput={(e) => handleInput(e, "decay")}/>
-        <Param labelName="sustain" min="0" max="20" value={synthState.sustain} onHandleInput={(e) => handleInput(e, "sustain")}/>
-        <Param labelName="release" min="0" max="20" value={synthState.release} onHandleInput={(e) => handleInput(e, "release")}/>
+        <Param labelName="sustain" min="0" max="5" value={synthState.sustain} onHandleInput={(e) => handleInput(e, "sustain")}/>
+        <Param labelName="release" min="0" max="5" step="0.01" value={synthState.release} onHandleInput={(e) => handleInput(e, "release")}/>
       </div>
+
+
+      <select name="filter-type" value={filterType} onChange={handleFilterType}>
+        <option value="lowpass">Lowpass</option>
+        <option value="highpass">Highpass</option>
+        <option value="bandpass">Bandpass</option>
+      </select>
+
       <div className='filter'>
         <Param labelName="cutoff" min="20" max="3000" step="20" value={synthState.cutoff} onHandleInput={(e) => handleInput(e, "cutoff")}/>
         <Param labelName="resonance" min="0" max="20" value={synthState.resonance} onHandleInput={(e) => handleInput(e, "resonance")}/>
