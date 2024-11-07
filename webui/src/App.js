@@ -42,9 +42,9 @@ export default function App() {
   const [filterType, setFilterType] = useState('lowpass');
   const [synthState, setSynthState] = useState({
     attack: 0 ,
-    decay: 2,
-    sustain: 4,
-    release: 1,
+    decay: 0.2,
+    sustain: 0.3,
+    release: 0.3,
     cutoff: 1800.0,
     resonance: 0,
     volume: 0.5,
@@ -69,7 +69,7 @@ export default function App() {
 
     const note = e.target.name;
 
-    // possible cleanup of audio nodes here
+    // cleanup of audio nodes here
     if (oscNodes.current.has(note) && gainNodes.current.has(note)){
       delete oscNodes.current[note];
       delete gainNodes.current[note];
@@ -93,9 +93,18 @@ export default function App() {
     filterNode.current.type = filterType;
     filterNode.current.frequency.setValueAtTime(synthState.cutoff, now);
 
-
-    gainNode.gain.linearRampToValueAtTime(synthState.volume, now + synthState.attack, synthState.decay);
-    oscNode.start(now);
+    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.001);
+    gainNode.gain.exponentialRampToValueAtTime(synthState.volume, now + synthState.attack);
+    if (synthState.sustain === 0) {
+        gainNode.gain.exponentialRampToValueAtTime(synthState.volume*(synthState.sustain+0.001), now + synthState.attack + synthState.decay - 0.001);
+        gainNode.gain.linearRampToValueAtTime(0, now + synthState.attack + synthState.decay);
+        oscNode.start(now);
+        oscNode.stop(now + synthState.attack + synthState.decay);
+    }
+    else {
+        gainNode.gain.exponentialRampToValueAtTime(synthState.volume*synthState.sustain, now + synthState.attack + synthState.decay);
+        oscNode.start(now);
+    }
 
     oscNodes.current.set(note, oscNode);
     gainNodes.current.set(note, gainNode);
@@ -114,9 +123,9 @@ export default function App() {
       currentGainNode.gain.linearRampToValueAtTime(0.0, now + synthState.release);
       currentOscNode?.stop(now + synthState.release);
 
-      if (!filterNode.current) {
-        filterNode.current.disconnect();
-      }
+    }
+    if (!filterNode.current) {
+      filterNode.current.disconnect();
     }
   }
 
@@ -132,8 +141,8 @@ export default function App() {
       </select>
       <div className='envelope'>
         <Param labelName="attack" min="0" max="5" step="0.01" value={synthState.attack} onHandleInput={(e) => handleInput(e, "attack")}/>
-        <Param labelName="decay" min="0" max="5" step="0.01" value={synthState.decay} onHandleInput={(e) => handleInput(e, "decay")}/>
-        <Param labelName="sustain" min="0" max="5" value={synthState.sustain} onHandleInput={(e) => handleInput(e, "sustain")}/>
+        <Param labelName="decay" min="0.005" max="5" step="0.01" value={synthState.decay} onHandleInput={(e) => handleInput(e, "decay")}/>
+        <Param labelName="sustain" min="0" max="1" step="0.01" value={synthState.sustain} onHandleInput={(e) => handleInput(e, "sustain")}/>
         <Param labelName="release" min="0" max="5" step="0.01" value={synthState.release} onHandleInput={(e) => handleInput(e, "release")}/>
       </div>
 
