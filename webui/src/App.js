@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import Param from './Param'
-import Keyboard from './Keyboard';
+import Envelope from './Envelope'
+import Filter from './Filter'
+import Keyboard from './Keyboard'
 
 const keyMap = {
   'C3':	130.81,
@@ -50,13 +52,6 @@ export default function App() {
     volume: 0.5,
   });
 
-  const handleSynthType = (e) => {
-    setSynthType(e.target.value);
-  }
-
-  const handleFilterType = (e) => {
-    setFilterType(e.target.value);
-  }
 
   function handleInput(e, labelName) {
     const stateCopy = {...synthState};
@@ -65,8 +60,8 @@ export default function App() {
     setSynthState(stateCopy);
   }
 
-  function handleNoteDown(e) {
 
+  function handleNoteDown(e) {
     const note = e.target.name;
 
     // cleanup of audio nodes here
@@ -113,10 +108,9 @@ export default function App() {
       currentGainNode.gain.setValueAtTime(currentGainNode.gain.value, now);
       currentGainNode.gain.linearRampToValueAtTime(0.0, now + synthState.release);
       currentOscNode?.stop(now + synthState.release);
-
-    }
-    if (!filterNode.current) {
-      filterNode.current.disconnect();
+      if (!filterNode.current) {
+        filterNode.current.disconnect();
+      }
     }
   }
 
@@ -124,30 +118,10 @@ export default function App() {
     <>
       <h1>Synth App</h1>
 
-      <select name="synth-type" value={synthType} onChange={handleSynthType}>
-        <option value="sine">Sine</option>
-        <option value="sawtooth">Sawtooth</option>
-        <option value="square">Square</option>
-        <option value="triangle">Triangle</option>
-      </select>
-      <div className='envelope'>
-        <Param labelName="attack" min="0" max="5" step="0.01" value={synthState.attack} onHandleInput={(e) => handleInput(e, "attack")}/>
-        <Param labelName="decay" min="0.005" max="5" step="0.01" value={synthState.decay} onHandleInput={(e) => handleInput(e, "decay")}/>
-        <Param labelName="sustain" min="0" max="1" step="0.01" value={synthState.sustain} onHandleInput={(e) => handleInput(e, "sustain")}/>
-        <Param labelName="release" min="0" max="5" step="0.01" value={synthState.release} onHandleInput={(e) => handleInput(e, "release")}/>
-      </div>
+      <Envelope synthType={synthType} attack={synthState.attack} decay={synthState.decay} sustain={synthState.sustain} release={synthState.release} handleInput={handleInput} handleSynthType={(e) => setSynthType(e.target.value)}/>
 
+      <Filter cutoff={synthState.cutoff} resonance={synthState.resonance} filterType={filterType} handleInput={handleInput} handleFilterType={(e) => setFilterType(e.target.value)}/>
 
-      <select name="filter-type" value={filterType} onChange={handleFilterType}>
-        <option value="lowpass">Lowpass</option>
-        <option value="highpass">Highpass</option>
-        <option value="bandpass">Bandpass</option>
-      </select>
-
-      <div className='filter'>
-        <Param labelName="cutoff" min="20" max="3000" step="20" value={synthState.cutoff} onHandleInput={(e) => handleInput(e, "cutoff")}/>
-        <Param labelName="resonance" min="0" max="20" value={synthState.resonance} onHandleInput={(e) => handleInput(e, "resonance")}/>
-      </div>
       <div className='master-control'>
         <Param labelName="volume" min="0.0" max="1.0" step="0.01" value={synthState.volume} onHandleInput={(e) => handleInput(e, "volume")}/>
         <Keyboard keyMap={keyMap} onNoteDown={(e) => handleNoteDown(e)} onNoteUp={(e) => handleNoteUp(e)}/>
