@@ -93,18 +93,9 @@ export default function App() {
     filterNode.current.type = filterType;
     filterNode.current.frequency.setValueAtTime(synthState.cutoff, now);
 
-    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.001);
-    gainNode.gain.exponentialRampToValueAtTime(synthState.volume, now + synthState.attack);
-    if (synthState.sustain === 0) {
-        gainNode.gain.exponentialRampToValueAtTime(synthState.volume*(synthState.sustain+0.001), now + synthState.attack + synthState.decay - 0.001);
-        gainNode.gain.linearRampToValueAtTime(0, now + synthState.attack + synthState.decay);
-        oscNode.start(now);
-        oscNode.stop(now + synthState.attack + synthState.decay);
-    }
-    else {
-        gainNode.gain.exponentialRampToValueAtTime(synthState.volume*synthState.sustain, now + synthState.attack + synthState.decay);
-        oscNode.start(now);
-    }
+    gainNode.gain.linearRampToValueAtTime(synthState.volume, now + synthState.attack);
+    gainNode.gain.setTargetAtTime(synthState.sustain * synthState.volume, now + synthState.attack, synthState.decay);
+    oscNode.start(now);
 
     oscNodes.current.set(note, oscNode);
     gainNodes.current.set(note, gainNode);
