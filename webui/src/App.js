@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Param from './Param'
 import Keyboard from './Keyboard';
 
@@ -30,6 +30,21 @@ const keyMap = {
   'C5':	523.25,
 }
 
+const keysToNotes = {
+  'a': 'C3',
+  'w': 'C#3/Db3',
+  's': 'D3',
+  'e': 'D#3/Eb3',
+  'd': 'E3',
+  'f': 'F3',
+  't': 'F#3/Gb3',
+  'g': 'G3',
+  'y': 'G#3/Ab3',
+  'h': 'A3',
+  'u': 'A#3/Bb3',
+  'j': 'B3',
+}
+
 export default function App() {
 
   const audioContext = useRef(new AudioContext());
@@ -52,23 +67,33 @@ export default function App() {
 
   const handleSynthType = (e) => {
     setSynthType(e.target.value);
-  }
+  };
 
   const handleFilterType = (e) => {
     setFilterType(e.target.value);
-  }
+  };
 
   function handleInput(e, labelName) {
-    const stateCopy = {...synthState};
-    stateCopy[labelName] = parseFloat(e.target.value);
-    console.log(synthState);
-    setSynthState(stateCopy);
+    setSynthState({
+        ...synthState,
+        [labelName]: parseFloat(e.target.value),
+    });
   }
 
-  function handleNoteDown(e) {
 
-    const note = e.target.name;
-
+  const handleNoteDown = useCallback((e) => {
+    
+    let note = '';
+    if (e.type === 'keydown' && e.key in keysToNotes) {
+        if (e.repeat) {
+            e.preventDefault();
+            return;
+        }
+       note = keysToNotes[e.key];
+    }
+    else if (e.type === 'mousedown') {
+        note = keyMap[e.target.name];
+    }
     // cleanup of audio nodes here
     if (oscNodes.current.has(note) && gainNodes.current.has(note)){
       delete oscNodes.current[note];
@@ -99,10 +124,18 @@ export default function App() {
 
     oscNodes.current.set(note, oscNode);
     gainNodes.current.set(note, gainNode);
-  }
+  }, [synthState, filterType, synthType]);
 
-  function handleNoteUp(e) {
-    const note = e.target.name;
+
+  const handleNoteUp = useCallback((e) => {
+    
+    let note = '';
+    if (e.type === 'keyup' && e.key in keysToNotes) {
+        note = keysToNotes[e.key];
+    }
+    else if (e.type === 'mouseup' || e.type === 'mouseleave') {
+        note = keyMap[e.target.name];
+    }
 
     if (oscNodes.current.has(note) && gainNodes.current.has(note)) {
       let currentOscNode = oscNodes.current.get(note);
@@ -118,7 +151,18 @@ export default function App() {
     if (!filterNode.current) {
       filterNode.current.disconnect();
     }
-  }
+  }, [synthState]);
+
+    useEffect(() => {
+
+        window.addEventListener('keydown', handleNoteDown);
+        window.addEventListener('keyup', handleNoteUp);
+
+        return () => {
+            window.removeEventListener('keydown', handleNoteDown);
+            window.removeEventListener('keyup', handleNoteUp);
+        }
+    }, [handleNoteDown, handleNoteUp]);
 
   return (
     <>
@@ -150,7 +194,7 @@ export default function App() {
       </div>
       <div className='master-control'>
         <Param labelName="volume" min="0.0" max="1.0" step="0.01" value={synthState.volume} onHandleInput={(e) => handleInput(e, "volume")}/>
-        <Keyboard keyMap={keyMap} onNoteDown={(e) => handleNoteDown(e)} onNoteUp={(e) => handleNoteUp(e)}/>
+        <Keyboard keyMap={keyMap} onNoteDown={handleNoteDown} onNoteUp={handleNoteUp}/>
       </div>
     </>
   )
