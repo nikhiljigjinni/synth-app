@@ -1,16 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Oscillator from "./Oscillator";
 import Filter from "./Filter";
 import { KEYS_TO_NOTES, NOTES_TO_FREQ } from "./constants";
+import { SynthState, FilterState } from "./types";
+
+type GainNodeMap = Map<string, GainNode>;
+type OscNodeMap = Map<string, OscillatorNode>;
+  
 
 export default function App() {
 
-    const audioContext = useRef(new AudioContext());
-    const oscNodes = useRef([new Map(), new Map()]);
-    const gainNodes = useRef(new Map());
-    const filterNode = useRef(null);
+    const audioContext = useRef<AudioContext>(new AudioContext());
+    const oscNodes = useRef<OscNodeMap>(new Map<string, OscillatorNode>());
+    const gainNodes = useRef<GainNodeMap>(new Map<string, GainNode>());
+    const filterNode = useRef<BiquadFilterNode | null>(null);
 
-    const [synthState, setSynthState] = useState({
+    const [synthState, setSynthState] = useState<SynthState>({
         type: 'sine',
         attack: 0,
         decay: 0,
@@ -19,13 +24,13 @@ export default function App() {
         volume: 0.5
     });
 
-    const [filterState, setFilterState] = useState({
+    const [filterState, setFilterState] = useState<FilterState>({
         type: 'lowpass',
         cutoff: 500
     });
 
     // state handling functions
-    const handleSynthState = (e) => {
+    const handleSynthState = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const value = (e.target.name === 'type') ? e.target.value : parseFloat(e.target.value);
         setSynthState({
             ...synthState,
@@ -33,7 +38,7 @@ export default function App() {
         });
     };
 
-    const handleFilterState = (e) => {
+    const handleFilterState = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const value = (e.target.name === 'type') ? e.target.value : parseFloat(e.target.value);
         setFilterState({
             ...filterState,
@@ -45,28 +50,28 @@ export default function App() {
     // function to handle key down
     // need to wrap this in a useCallback so function isn't
     // recreated every time
-    const handleNoteDown = useCallback((e) => {
+    const handleNoteDown = useCallback((e: KeyboardEvent) => {
 
-        if (e.key in KEYS_TO_NOTES) {
+        if (KEYS_TO_NOTES.has(e.key)) {
             if (e.repeat) {
                 return
             }
 
             // cleanup existing gain and osc nodes
             if (oscNodes.current.has(e.key)) {
-                let oscNode = oscNodes.current.get(e.key);
+                let oscNode = oscNodes.current.get(e.key)!;
                 oscNode.stop(audioContext.current.currentTime);
                 oscNodes.current.delete(e.key);
             }
             
             if (gainNodes.current.has(e.key)) {
-                let gainNode = gainNodes.current.get(e.key);
+                let gainNode = gainNodes.current.get(e.key)!;
                 gainNode.gain.cancelScheduledValues(audioContext.current.currentTime);
                 gainNodes.current.delete(e.key);
             }
 
             // play note
-            const noteFrequency = NOTES_TO_FREQ[KEYS_TO_NOTES[e.key]]
+            const noteFrequency = NOTES_TO_FREQ.get(KEYS_TO_NOTES.get(e.key)!)!;
 
             let oscNode = audioContext.current.createOscillator();
             let gainNode = audioContext.current.createGain();
@@ -96,12 +101,12 @@ export default function App() {
         }
     }, [synthState, filterState]);
 
-    const handleNoteUp = useCallback((e) => {
+    const handleNoteUp = useCallback((e: KeyboardEvent) => {
 
-        if (e.key in KEYS_TO_NOTES) {
+        if (KEYS_TO_NOTES.has(e.key)) {
             if (oscNodes.current.has(e.key) && gainNodes.current.has(e.key)) {
-                let oscNode = oscNodes.current.get(e.key);
-                let gainNode = gainNodes.current.get(e.key);
+                let oscNode = oscNodes.current.get(e.key)!;
+                let gainNode = gainNodes.current.get(e.key)!;
 
                 const now = audioContext.current.currentTime;
                 gainNode.gain.cancelScheduledValues(now);
@@ -110,8 +115,8 @@ export default function App() {
 
                 oscNode.stop(now + synthState.release);
 
-                oscNodes.current.delete(e.key, oscNode);
-                gainNodes.current.delete(e.key, gainNode);
+                oscNodes.current.delete(e.key);
+                gainNodes.current.delete(e.key);
 
             } 
         }
