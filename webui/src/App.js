@@ -1,6 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import Param from './Param'
-import Keyboard from './Keyboard';
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const keyMap = {
   'C3':	130.81,
@@ -47,155 +45,171 @@ const keysToNotes = {
 
 export default function App() {
 
-  const audioContext = useRef(new AudioContext());
-  
-  const gainNodes = useRef(new Map());
-  const oscNodes = useRef(new Map());
-  const filterNode = useRef(null);
+    const audioContext = useRef(new AudioContext());
+    const oscNodes = useRef(new Map());
+    const gainNodes = useRef(new Map());
+    const filterNode = useRef(null);
 
-  const [synthType, setSynthType] = useState('sine');
-  const [filterType, setFilterType] = useState('lowpass');
-  const [synthState, setSynthState] = useState({
-    attack: 0 ,
-    decay: 0.2,
-    sustain: 0.3,
-    release: 0.3,
-    cutoff: 1800.0,
-    resonance: 0,
-    volume: 0.5,
-  });
-
-  const handleSynthType = (e) => {
-    setSynthType(e.target.value);
-  };
-
-  const handleFilterType = (e) => {
-    setFilterType(e.target.value);
-  };
-
-  function handleInput(e, labelName) {
-    setSynthState({
-        ...synthState,
-        [labelName]: parseFloat(e.target.value),
+    const [synthType, setSynthType] = useState('sine');
+    const [synthState, setSynthState] = useState({
+        attack: 0,
+        decay: 0,
+        sustain: 0,
+        release: 0,
+        volume: 0.5
     });
-  }
 
+    const [filterType, setFilterType] = useState('lowpass');
+    const [filterState, setFilterState] = useState({
+        cutoff: 500
+    });
 
-  const handleNoteDown = useCallback((e) => {
-    
-    let note = '';
-    if (e.type === 'keydown' && e.key in keysToNotes) {
-        if (e.repeat) {
-            e.preventDefault();
-            return;
+    const handleInput = (e, paramName, type = "envelope") => {
+        if (type === 'filter') {
+            setFilterState({
+                ...filterState,
+                [paramName]: parseFloat(e.target.value)
+            });
         }
-       note = keysToNotes[e.key];
-    }
-    else if (e.type === 'mousedown') {
-        note = keyMap[e.target.name];
-    }
-    // cleanup of audio nodes here
-    if (oscNodes.current.has(note) && gainNodes.current.has(note)){
-      delete oscNodes.current[note];
-      delete gainNodes.current[note];
-    }
+        else if (type === 'envelope') {
+            setSynthState({
+                ...synthState,
+                [paramName]: parseFloat(e.target.value)
+            });
+        }
+    };
 
-    let oscNode = audioContext.current.createOscillator();
-    let gainNode = audioContext.current.createGain();
-    filterNode.current = audioContext.current.createBiquadFilter();
+    const handleSynthType = (e) => {
+        setSynthType(e.target.value);
+    };
 
-    oscNode.type = synthType;
+    const handleFilterType = (e) => {
+        setFilterType(e.target.value);
+    };
 
-    oscNode.connect(filterNode.current);
-    filterNode.current.connect(gainNode);
-    gainNode.connect(audioContext.current.destination);
+    const handleNoteDown = useCallback((e) => {
+        // prevent repeat if key is long pressed
 
-    let now = audioContext.current.currentTime;
-    oscNode.frequency.setValueAtTime(keyMap[note] ?? 0, now);
-    gainNode.gain.cancelScheduledValues(now);
-    gainNode.gain.setValueAtTime(0, now);
+        if (e.key in keysToNotes) {
+            if (e.repeat) {
+                return
+            }
 
-    filterNode.current.type = filterType;
-    filterNode.current.frequency.setValueAtTime(synthState.cutoff, now);
+            // cleanup existing gain and osc nodes
+            if (oscNodes.current.has(e.key)) {
+                let oscNode = oscNodes.current.get(e.key);
+                oscNode.stop(audioContext.current.currentTime);
+                oscNodes.current.delete(e.key);
+            }
+            
+            if (gainNodes.current.has(e.key)) {
+                let gainNode = gainNodes.current.get(e.key);
+                gainNode.gain.cancelScheduledValues(audioContext.current.currentTime);
+                gainNodes.current.delete(e.key);
+            }
 
-    gainNode.gain.linearRampToValueAtTime(synthState.volume, now + synthState.attack);
-    gainNode.gain.setTargetAtTime(synthState.sustain * synthState.volume, now + synthState.attack, synthState.decay);
-    oscNode.start(now);
+            // play note
+            const noteFrequency = keyMap[keysToNotes[e.key]]
 
-    oscNodes.current.set(note, oscNode);
-    gainNodes.current.set(note, gainNode);
-  }, [synthState, filterType, synthType]);
+            let oscNode = audioContext.current.createOscillator();
+            let gainNode = audioContext.current.createGain();
+            filterNode.current = audioContext.current.createBiquadFilter();
 
+            const now = audioContext.current.currentTime;
+            oscNode.connect(filterNode.current);
+            filterNode.current.connect(gainNode);
+            gainNode.connect(audioContext.current.destination);
 
-  const handleNoteUp = useCallback((e) => {
-    
-    let note = '';
-    if (e.type === 'keyup' && e.key in keysToNotes) {
-        note = keysToNotes[e.key];
-    }
-    else if (e.type === 'mouseup' || e.type === 'mouseleave') {
-        note = keyMap[e.target.name];
-    }
+            oscNode.type = synthType;
+            oscNode.frequency.setValueAtTime(noteFrequency, now);
 
-    if (oscNodes.current.has(note) && gainNodes.current.has(note)) {
-      let currentOscNode = oscNodes.current.get(note);
-      let currentGainNode = gainNodes.current.get(note);
+            filterNode.current.type = filterType;
+            filterNode.current.frequency.setValueAtTime(filterState.cutoff, now);
 
-      let now = audioContext.current.currentTime;
-      currentGainNode.gain.cancelScheduledValues(now);
-      currentGainNode.gain.setValueAtTime(currentGainNode.gain.value, now);
-      currentGainNode.gain.linearRampToValueAtTime(0.0, now + synthState.release);
-      currentOscNode?.stop(now + synthState.release);
+            gainNode.gain.cancelScheduledValues(now);
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(synthState.volume, now + synthState.attack);
+            gainNode.gain.setTargetAtTime(synthState.volume*synthState.sustain, now + synthState.attack, synthState.decay);
 
-    }
-    if (!filterNode.current) {
-      filterNode.current.disconnect();
-    }
-  }, [synthState]);
+            oscNodes.current.set(e.key, oscNode);
+            gainNodes.current.set(e.key, gainNode);
+
+            oscNode.start();
+
+        }
+    }, [synthType, synthState, filterType, filterState]);
+
+    const handleNoteUp = useCallback((e) => {
+
+        if (e.key in keysToNotes) {
+            if (oscNodes.current.has(e.key) && gainNodes.current.has(e.key)) {
+                let oscNode = oscNodes.current.get(e.key);
+                let gainNode = gainNodes.current.get(e.key);
+
+                const now = audioContext.current.currentTime;
+                gainNode.gain.cancelScheduledValues(now);
+                gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + synthState.release);
+
+                oscNode.stop(now + synthState.release);
+
+                oscNodes.current.delete(e.key, oscNode);
+                gainNodes.current.delete(e.key, gainNode);
+
+            } 
+        }
+    }, [synthState]);
 
     useEffect(() => {
+        // setup event listeners
+        window.addEventListener("keydown", handleNoteDown);
+        window.addEventListener("keyup", handleNoteUp);
 
-        window.addEventListener('keydown', handleNoteDown);
-        window.addEventListener('keyup', handleNoteUp);
-
-        return () => {
-            window.removeEventListener('keydown', handleNoteDown);
-            window.removeEventListener('keyup', handleNoteUp);
+        if (filterNode.current === null) {
+            filterNode.current = audioContext.current.createBiquadFilter();
         }
-    }, [handleNoteDown, handleNoteUp]);
 
-  return (
-    <>
-      <h1>Synth App</h1>
+        // remove event listeners
+        return () => {
+            window.removeEventListener("keydown", handleNoteDown);
+            window.removeEventListener("keyup", handleNoteUp);
 
-      <select name="synth-type" value={synthType} onChange={handleSynthType}>
-        <option value="sine">Sine</option>
-        <option value="sawtooth">Sawtooth</option>
-        <option value="square">Square</option>
-        <option value="triangle">Triangle</option>
-      </select>
-      <div className='envelope'>
-        <Param labelName="attack" min="0" max="5" step="0.01" value={synthState.attack} onHandleInput={(e) => handleInput(e, "attack")}/>
-        <Param labelName="decay" min="0.005" max="5" step="0.01" value={synthState.decay} onHandleInput={(e) => handleInput(e, "decay")}/>
-        <Param labelName="sustain" min="0" max="1" step="0.01" value={synthState.sustain} onHandleInput={(e) => handleInput(e, "sustain")}/>
-        <Param labelName="release" min="0" max="5" step="0.01" value={synthState.release} onHandleInput={(e) => handleInput(e, "release")}/>
-      </div>
+            if (filterNode.current !== null) {
+                filterNode.current.disconnect();
+            }
+
+        };
+    }, [handleNoteDown, handleNoteUp])
+
+    return (
+        <>
+            <label htmlFor="attack">Attack</label> 
+            <input type="range" name="attack" min="0.01" max="4" step="0.01" value={synthState.attack} onChange={(e) => handleInput(e, "attack")}/>
+            <label htmlFor="decay">Decay</label> 
+            <input type="range" name="decay" min="0.05" max="4" step="0.01" value={synthState.decay} onChange={(e) => handleInput(e, "decay")}/>
+            <label htmlFor="sustain">Sustain</label> 
+            <input type="range" name="sustain" min="0" max="1" step="0.01" value={synthState.sustain} onChange={(e) => handleInput(e, "sustain")}/>
+            <label htmlFor="release">Release</label> 
+            <input type="range" name="release" min="0.01" max="4" step="0.01" value={synthState.release} onChange={(e) => handleInput(e, "release")}/>
+            <label htmlFor="volume">Volume</label> 
+            <input type="range" name="volume" min="0" max="1" step="0.01" value={synthState.volume} onChange={(e) => handleInput(e, "volume")}/>
+
+            <select value={synthType} onChange={handleSynthType}>
+                <option value="sine">Sine</option>
+                <option value="square">Square</option>
+                <option value="triangle">Triangle</option>
+                <option value="sawtooth">Sawtooth</option>
+            </select>
 
 
-      <select name="filter-type" value={filterType} onChange={handleFilterType}>
-        <option value="lowpass">Lowpass</option>
-        <option value="highpass">Highpass</option>
-        <option value="bandpass">Bandpass</option>
-      </select>
+            <label htmlFor="cutoff">Cutoff</label> 
+            <input type="range" name="cutoff" min="20" max="3000" step="20" value={filterState.cutoff} onChange={(e) => handleInput(e, "cutoff", "filter")}/>
 
-      <div className='filter'>
-        <Param labelName="cutoff" min="20" max="3000" step="20" value={synthState.cutoff} onHandleInput={(e) => handleInput(e, "cutoff")}/>
-        <Param labelName="resonance" min="0" max="20" value={synthState.resonance} onHandleInput={(e) => handleInput(e, "resonance")}/>
-      </div>
-      <div className='master-control'>
-        <Param labelName="volume" min="0.0" max="1.0" step="0.01" value={synthState.volume} onHandleInput={(e) => handleInput(e, "volume")}/>
-        <Keyboard keyMap={keyMap} onNoteDown={handleNoteDown} onNoteUp={handleNoteUp}/>
-      </div>
-    </>
-  )
+            <select value={filterType} onChange={handleFilterType}>
+                <option value="lowpass">Lowpass</option>
+                <option value="highpass">Highpass</option>
+                <option value="bandpass">Bandpass</option>
+            </select>
+        </>
+    );
 }
