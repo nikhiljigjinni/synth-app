@@ -40,3 +40,5 @@ export const KEYS_TO_NOTES = new Map<string, string>([
   ['u', 'A#3/Bb3'],
   ['j', 'B3'],
 ]);
+
+export const NUM_OSCS = 2;

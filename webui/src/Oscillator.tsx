@@ -2,21 +2,22 @@ import React from 'react';
 import { SynthState } from './types';
 
 type HandleSynthState = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  oscId: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
 ) => void;
 
 export default function Oscillator({
+  oscId,
   synthState,
   handleSynthState,
 }: {
+  oscId: number; 
   synthState: SynthState;
   handleSynthState: HandleSynthState;
 }) {
   return (
     <>
-      <h1>Oscillator</h1>
-
-      <select name="type" value={synthState.type} onChange={handleSynthState}>
+      <h1>Oscillator {oscId}</h1>
+      <select name="type" value={synthState.type} onChange={(e) => handleSynthState(oscId, e)}>
         <option value="sine">Sine</option>
         <option value="square">Square</option>
         <option value="triangle">Triangle</option>
@@ -30,7 +31,7 @@ export default function Oscillator({
         max="2"
         step="0.01"
         value={synthState.attack}
-        onChange={handleSynthState}
+        onChange={(e) => handleSynthState(oscId, e)}
       />
       <label htmlFor="decay">Decay</label>
       <input
@@ -40,7 +41,7 @@ export default function Oscillator({
         max="2"
         step="0.01"
         value={synthState.decay}
-        onChange={handleSynthState}
+        onChange={(e) => handleSynthState(oscId, e)}
       />
       <label htmlFor="sustain">Sustain</label>
       <input
@@ -50,7 +51,7 @@ export default function Oscillator({
         max="1"
         step="0.01"
         value={synthState.sustain}
-        onChange={handleSynthState}
+        onChange={(e) => handleSynthState(oscId, e)}
       />
       <label htmlFor="release">Release</label>
       <input
@@ -60,7 +61,7 @@ export default function Oscillator({
         max="2"
         step="0.01"
         value={synthState.release}
-        onChange={handleSynthState}
+        onChange={(e) => handleSynthState(oscId, e)}
       />
       <label htmlFor="volume">Volume</label>
       <input
@@ -70,7 +71,7 @@ export default function Oscillator({
         max="1"
         step="0.01"
         value={synthState.volume}
-        onChange={handleSynthState}
+        onChange={(e) => handleSynthState(oscId, e)}
       />
     </>
   );

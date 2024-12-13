@@ -1,42 +1,53 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Oscillator from './Oscillator';
 import Filter from './Filter';
-import { KEYS_TO_NOTES, NOTES_TO_FREQ } from './constants';
+import { KEYS_TO_NOTES, NOTES_TO_FREQ, NUM_OSCS } from './constants';
 import { SynthState, FilterState } from './types';
 
-type GainNodeMap = Map<string, GainNode>;
-type OscNodeMap = Map<string, OscillatorNode>;
+type GainNodeMap = Map<string, Array<GainNode>>;
+type OscNodeMap = Map<string, Array<OscillatorNode>>;
 
 export default function App() {
   const audioContext = useRef<AudioContext>(new AudioContext());
-  const oscNodes = useRef<OscNodeMap>(new Map<string, OscillatorNode>());
-  const gainNodes = useRef<GainNodeMap>(new Map<string, GainNode>());
+  const oscNodes = useRef<OscNodeMap>(new Map<string, Array<OscillatorNode>>());
+  const gainNodes = useRef<GainNodeMap>(new Map<string, Array<GainNode>>());
   const filterNode = useRef<BiquadFilterNode | null>(null);
 
-  const [synthState, setSynthState] = useState<SynthState>({
-    type: 'sine',
-    attack: 0,
-    decay: 0,
-    sustain: 0,
-    release: 0,
-    volume: 0.5,
-  });
-
+  const [synthStates, setSynthStates] = useState<Array<SynthState>>(
+    [
+      {
+        type: 'sine',
+        attack: 0,
+        decay: 0,
+        sustain: 0,
+        release: 0,
+        volume: 0.5,
+      },
+      {
+        type: 'square',
+        attack: 0,
+        decay: 0,
+        sustain: 0,
+        release: 0,
+        volume: 0.2,
+      }
+    ]
+  );
   const [filterState, setFilterState] = useState<FilterState>({
     type: 'lowpass' as BiquadFilterType,
     cutoff: 500,
   });
 
   // state handling functions
-  const handleSynthState = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  const handleSynthStates = (
+    oscId: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const value =
       e.target.name === 'type' ? e.target.value as OscillatorType: parseFloat(e.target.value);
-    setSynthState({
-      ...synthState,
-      [e.target.name]: value,
-    });
+
+    setSynthStates(() => {
+        return synthStates.map((synthState, index) => index === oscId ? {...synthState, [e.target.name]: value} : synthState);
+    })
   };
 
   const handleFilterState = (
@@ -50,7 +61,6 @@ export default function App() {
       [e.target.name]: value,
     });
   };
-
   // function to handle key down
   // need to wrap this in a useCallback so function isn't
   // recreated every time
@@ -64,79 +74,94 @@ export default function App() {
 
         // cleanup existing gain and osc nodes
         if (oscNodes.current.has(e.key)) {
-          let oscNode = oscNodes.current.get(e.key)!;
-          oscNode.stop(audioContext.current.currentTime);
-          oscNodes.current.delete(e.key);
+            let nodes = oscNodes.current.get(e.key)!;
+            nodes.forEach((node) => {
+                node.stop(audioContext.current.currentTime);
+            }); 
+            oscNodes.current.delete(e.key);
         }
 
         if (gainNodes.current.has(e.key)) {
-          let gainNode = gainNodes.current.get(e.key)!;
-          gainNode.gain.cancelScheduledValues(audioContext.current.currentTime);
-          gainNodes.current.delete(e.key);
+            let nodes = gainNodes.current.get(e.key)!;
+            nodes.forEach((node) => {
+                node.gain.cancelScheduledValues(audioContext.current.currentTime);
+            });
+            gainNodes.current.delete(e.key);
         }
 
         // play note
         const noteFrequency = NOTES_TO_FREQ.get(KEYS_TO_NOTES.get(e.key)!)!;
-
-        let oscNode = audioContext.current.createOscillator();
-        let gainNode = audioContext.current.createGain();
+  
+        let tempOscNodes = [];
+        let tempGainNodes = [];
         filterNode.current = audioContext.current.createBiquadFilter();
 
-        const now = audioContext.current.currentTime;
-        oscNode.connect(filterNode.current);
-        filterNode.current.connect(gainNode);
-        gainNode.connect(audioContext.current.destination);
+        for (let i = 0; i < NUM_OSCS; i++) {
+            let tempOscNode = audioContext.current.createOscillator();
+            let tempGainNode = audioContext.current.createGain();
+            const now = audioContext.current.currentTime;
 
-        oscNode.type = synthState.type;
-        oscNode.frequency.setValueAtTime(noteFrequency, now);
+            tempOscNode.connect(filterNode.current);
+            filterNode.current.connect(tempGainNode)
+            tempGainNode.connect(audioContext.current.destination);
 
-        filterNode.current.type = filterState.type;
-        filterNode.current.frequency.setValueAtTime(filterState.cutoff, now);
+            filterNode.current.type = filterState.type;
+            filterNode.current.frequency.setValueAtTime(filterState.cutoff, now);
 
-        gainNode.gain.cancelScheduledValues(now);
-        gainNode.gain.setValueAtTime(0, now);
-        gainNode.gain.linearRampToValueAtTime(
-          synthState.volume,
-          now + synthState.attack
-        );
-        gainNode.gain.setTargetAtTime(
-          synthState.volume * synthState.sustain,
-          now + synthState.attack,
-          synthState.decay
-        );
+            tempOscNode.type = synthStates[i].type;
+            tempOscNode.frequency.setValueAtTime(noteFrequency, now);
 
-        oscNodes.current.set(e.key, oscNode);
-        gainNodes.current.set(e.key, gainNode);
+            tempGainNode.gain.cancelScheduledValues(now);
+            tempGainNode.gain.setValueAtTime(0, now);
+            tempGainNode.gain.setValueAtTime(0, now);
+            tempGainNode.gain.linearRampToValueAtTime(
+              synthStates[i].volume,
+              now + synthStates[i].attack
+            );
+            tempGainNode.gain.setTargetAtTime(
+              synthStates[i].volume * synthStates[i].sustain,
+              now + synthStates[i].attack,
+              synthStates[i].decay
+            );
 
-        oscNode.start();
+            tempOscNodes.push(tempOscNode);
+            tempGainNodes.push(tempGainNode);
+
+            tempOscNode.start();
+        }
+
+        oscNodes.current.set(e.key, tempOscNodes);
+        gainNodes.current.set(e.key, tempGainNodes);
       }
     },
-    [synthState, filterState]
+    [synthStates, filterState]
   );
-
+  //
   const handleNoteUp = useCallback(
     (e: KeyboardEvent) => {
       e.preventDefault();
       if (KEYS_TO_NOTES.has(e.key)) {
         if (oscNodes.current.has(e.key) && gainNodes.current.has(e.key)) {
-          let oscNode = oscNodes.current.get(e.key)!;
-          let gainNode = gainNodes.current.get(e.key)!;
-
+          let tempOscNodes = oscNodes.current.get(e.key)!;
+          let tempGainNodes = gainNodes.current.get(e.key)!;
+  //
           const now = audioContext.current.currentTime;
-          gainNode.gain.cancelScheduledValues(now);
-          gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-          gainNode.gain.linearRampToValueAtTime(0, now + synthState.release);
+          for (let i = 0; i < NUM_OSCS; i++) {
+            tempGainNodes[i].gain.cancelScheduledValues(now)
+            tempGainNodes[i].gain.setValueAtTime(tempGainNodes[i].gain.value, now);
+            tempGainNodes[i].gain.linearRampToValueAtTime(0, now + synthStates[i].release);
 
-          oscNode.stop(now + synthState.release);
+            tempOscNodes[i].stop(now + synthStates[i].release);
+          }
 
           oscNodes.current.delete(e.key);
           gainNodes.current.delete(e.key);
         }
       }
     },
-    [synthState]
+    [synthStates]
   );
-
+  //
   // set up event listeners
   useEffect(() => {
     window.addEventListener('keydown', handleNoteDown);
@@ -165,7 +190,10 @@ export default function App() {
 
   return (
     <>
-      <Oscillator synthState={synthState} handleSynthState={handleSynthState} />
+      
+      {Array.from({length: NUM_OSCS}, (_, index) => index).map((num) => (
+          <Oscillator oscId={num} synthState={synthStates[num]} handleSynthState={handleSynthStates} />
+      ))}
       <Filter filterState={filterState} handleFilterState={handleFilterState} />
     </>
   );
