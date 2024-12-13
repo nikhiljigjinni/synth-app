@@ -13,26 +13,22 @@ export default function App() {
   const gainNodes = useRef<GainNodeMap>(new Map<string, Array<GainNode>>());
   const filterNode = useRef<BiquadFilterNode | null>(null);
 
-  const [synthStates, setSynthStates] = useState<Array<SynthState>>(
-    [
-      {
-        type: 'sine',
-        attack: 0,
-        decay: 0,
-        sustain: 0,
-        release: 0,
-        volume: 0.5,
-      },
-      {
-        type: 'square',
-        attack: 0,
-        decay: 0,
-        sustain: 0,
-        release: 0,
-        volume: 0.2,
-      }
-    ]
-  );
+  const [synthStates, setSynthStates] = useState<Array<SynthState>>(() => {
+    const initialData: Array<SynthState> = [];
+    for (let i = 0; i < NUM_OSCS; i++) {
+        initialData.push(
+          {
+            type: 'sine',
+            attack: 0,
+            decay: 0,
+            sustain: 0,
+            release: 0,
+            volume: 0.2,
+          }
+        );
+    }
+    return initialData;
+  });
   const [filterState, setFilterState] = useState<FilterState>({
     type: 'lowpass' as BiquadFilterType,
     cutoff: 500,
@@ -192,7 +188,7 @@ export default function App() {
     <>
       
       {Array.from({length: NUM_OSCS}, (_, index) => index).map((num) => (
-          <Oscillator oscId={num} synthState={synthStates[num]} handleSynthState={handleSynthStates} />
+          <Oscillator key={num} oscId={num} synthState={synthStates[num]} handleSynthState={handleSynthStates} />
       ))}
       <Filter filterState={filterState} handleFilterState={handleFilterState} />
     </>
