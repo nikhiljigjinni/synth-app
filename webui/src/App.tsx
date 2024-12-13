@@ -23,6 +23,7 @@ export default function App() {
             decay: 0,
             sustain: 0,
             release: 0,
+            detune: 0,
             volume: 0.2,
           }
         );
@@ -106,6 +107,7 @@ export default function App() {
 
             tempOscNode.type = synthStates[i].type;
             tempOscNode.frequency.setValueAtTime(noteFrequency, now);
+            tempOscNode.detune.setValueAtTime(synthStates[i].detune, now);
 
             tempGainNode.gain.cancelScheduledValues(now);
             tempGainNode.gain.setValueAtTime(0, now);
@@ -132,7 +134,7 @@ export default function App() {
     },
     [synthStates, filterState]
   );
-  //
+
   const handleNoteUp = useCallback(
     (e: KeyboardEvent) => {
       e.preventDefault();
@@ -140,7 +142,7 @@ export default function App() {
         if (oscNodes.current.has(e.key) && gainNodes.current.has(e.key)) {
           let tempOscNodes = oscNodes.current.get(e.key)!;
           let tempGainNodes = gainNodes.current.get(e.key)!;
-  //
+
           const now = audioContext.current.currentTime;
           for (let i = 0; i < NUM_OSCS; i++) {
             tempGainNodes[i].gain.cancelScheduledValues(now)

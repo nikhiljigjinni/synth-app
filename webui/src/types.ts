@@ -4,6 +4,7 @@ export type SynthState = {
   decay: number;
   sustain: number;
   release: number;
+  detune: number;
   volume: number;
 };
 

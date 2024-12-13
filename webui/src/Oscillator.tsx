@@ -16,7 +16,7 @@ export default function Oscillator({
 }) {
   return (
     <>
-      <h1>Oscillator {oscId}</h1>
+      <h3>Oscillator {oscId+1}</h3>
       <select name="type" value={synthState.type} onChange={(e) => handleSynthState(oscId, e)}>
         <option value="sine">Sine</option>
         <option value="square">Square</option>
@@ -61,6 +61,16 @@ export default function Oscillator({
         max="2"
         step="0.01"
         value={synthState.release}
+        onChange={(e) => handleSynthState(oscId, e)}
+      />
+      <label htmlFor="detune">Detune</label>
+      <input
+        type="range"
+        name="detune"
+        min="-50"
+        max="50"
+        step="1"
+        value={synthState.detune}
         onChange={(e) => handleSynthState(oscId, e)}
       />
       <label htmlFor="volume">Volume</label>
