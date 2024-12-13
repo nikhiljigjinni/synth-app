@@ -23,7 +23,7 @@ export default function App() {
   });
 
   const [filterState, setFilterState] = useState<FilterState>({
-    type: 'lowpass',
+    type: 'lowpass' as BiquadFilterType,
     cutoff: 500,
   });
 
@@ -32,7 +32,7 @@ export default function App() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const value =
-      e.target.name === 'type' ? e.target.value : parseFloat(e.target.value);
+      e.target.name === 'type' ? e.target.value as OscillatorType: parseFloat(e.target.value);
     setSynthState({
       ...synthState,
       [e.target.name]: value,
@@ -42,8 +42,9 @@ export default function App() {
   const handleFilterState = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
+    console.log(e.target.name);
     const value =
-      e.target.name === 'type' ? e.target.value : parseFloat(e.target.value);
+      e.target.name === 'type' ? e.target.value as BiquadFilterType: parseFloat(e.target.value);
     setFilterState({
       ...filterState,
       [e.target.name]: value,
@@ -55,6 +56,7 @@ export default function App() {
   // recreated every time
   const handleNoteDown = useCallback(
     (e: KeyboardEvent) => {
+      e.preventDefault();
       if (KEYS_TO_NOTES.has(e.key)) {
         if (e.repeat) {
           return;
@@ -114,6 +116,7 @@ export default function App() {
 
   const handleNoteUp = useCallback(
     (e: KeyboardEvent) => {
+      e.preventDefault();
       if (KEYS_TO_NOTES.has(e.key)) {
         if (oscNodes.current.has(e.key) && gainNodes.current.has(e.key)) {
           let oscNode = oscNodes.current.get(e.key)!;

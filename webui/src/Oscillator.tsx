@@ -46,7 +46,7 @@ export default function Oscillator({
       <input
         type="range"
         name="sustain"
-        min="0.05"
+        min="0.0"
         max="1"
         step="0.01"
         value={synthState.sustain}
