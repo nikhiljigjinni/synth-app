@@ -1,3 +1,8 @@
+export type FilterState = {
+  type: BiquadFilterType;
+  cutoff: number;
+};
+
 export type SynthState = {
   type: OscillatorType;
   attack: number;
@@ -6,9 +11,7 @@ export type SynthState = {
   release: number;
   detune: number;
   volume: number;
+  cutoff: number;
+  filterType: BiquadFilterType;
 };
 
-export type FilterState = {
-  type: BiquadFilterType;
-  cutoff: number;
-};

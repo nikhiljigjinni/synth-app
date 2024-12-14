@@ -73,6 +73,21 @@ export default function Oscillator({
         value={synthState.detune}
         onChange={(e) => handleSynthState(oscId, e)}
       />
+      <label htmlFor="cutoff">Cutoff</label>
+      <input
+        type="range"
+        name="cutoff"
+        min="20"
+        max="3000"
+        step="20"
+        value={synthState.cutoff}
+        onChange={(e) => handleSynthState(oscId, e)}
+      />
+      <select name="type" value={synthState.filterType} onChange={(e) => handleSynthState(oscId, e)}>
+        <option value="lowpass">Lowpass</option>
+        <option value="highpass">Highpass</option>
+        <option value="bandpass">Bandpass</option>
+      </select>
       <label htmlFor="volume">Volume</label>
       <input
         type="range"
