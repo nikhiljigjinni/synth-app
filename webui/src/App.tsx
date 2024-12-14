@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Oscillator from './Oscillator';
-import Filter from './Filter';
 import { KEYS_TO_NOTES, NOTES_TO_FREQ, NUM_OSCS } from './constants';
-import { SynthState, FilterState } from './types';
+import { SynthState} from './types';
 
 type GainNodeMap = Map<string, Array<GainNode>>;
 type OscNodeMap = Map<string, Array<OscillatorNode>>;
@@ -11,31 +10,26 @@ export default function App() {
   const audioContext = useRef<AudioContext>(new AudioContext());
   const oscNodes = useRef<OscNodeMap>(new Map<string, Array<OscillatorNode>>());
   const gainNodes = useRef<GainNodeMap>(new Map<string, Array<GainNode>>());
-  const filterNode = useRef<BiquadFilterNode | null>(null);
+  const filterNodes = useRef<Array<BiquadFilterNode>>([]);
 
-  const [synthStates, setSynthStates] = useState<Array<SynthState>>(
-    [
-      {
-        type: 'sine',
-        attack: 0,
-        decay: 0,
-        sustain: 0,
-        release: 0,
-        volume: 0.5,
-      },
-      {
-        type: 'square',
-        attack: 0,
-        decay: 0,
-        sustain: 0,
-        release: 0,
-        volume: 0.2,
-      }
-    ]
-  );
-  const [filterState, setFilterState] = useState<FilterState>({
-    type: 'lowpass' as BiquadFilterType,
-    cutoff: 500,
+  const [synthStates, setSynthStates] = useState<Array<SynthState>>(() => {
+    const initialData: Array<SynthState> = [];
+    for (let i = 0; i < NUM_OSCS; i++) {
+        initialData.push(
+          {
+            type: 'sine',
+            attack: 0,
+            decay: 0,
+            sustain: 0,
+            release: 0,
+            detune: 0,
+            volume: 0.2,
+            cutoff: 500,
+            filterType: 'lowpass'
+          }
+        );
+    }
+    return initialData;
   });
 
   // state handling functions
@@ -50,17 +44,6 @@ export default function App() {
     })
   };
 
-  const handleFilterState = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    console.log(e.target.name);
-    const value =
-      e.target.name === 'type' ? e.target.value as BiquadFilterType: parseFloat(e.target.value);
-    setFilterState({
-      ...filterState,
-      [e.target.name]: value,
-    });
-  };
   // function to handle key down
   // need to wrap this in a useCallback so function isn't
   // recreated every time
@@ -94,22 +77,23 @@ export default function App() {
   
         let tempOscNodes = [];
         let tempGainNodes = [];
-        filterNode.current = audioContext.current.createBiquadFilter();
 
         for (let i = 0; i < NUM_OSCS; i++) {
             let tempOscNode = audioContext.current.createOscillator();
             let tempGainNode = audioContext.current.createGain();
             const now = audioContext.current.currentTime;
 
-            tempOscNode.connect(filterNode.current);
-            filterNode.current.connect(tempGainNode)
+            tempOscNode.connect(filterNodes.current[i]);
+            filterNodes.current[i].connect(tempGainNode)
             tempGainNode.connect(audioContext.current.destination);
 
-            filterNode.current.type = filterState.type;
-            filterNode.current.frequency.setValueAtTime(filterState.cutoff, now);
+            filterNodes.current[i].frequency.cancelScheduledValues(now);
+            filterNodes.current[i].type = synthStates[i].filterType;
+            filterNodes.current[i].frequency.setValueAtTime(synthStates[i].cutoff, now);
 
             tempOscNode.type = synthStates[i].type;
             tempOscNode.frequency.setValueAtTime(noteFrequency, now);
+            tempOscNode.detune.setValueAtTime(synthStates[i].detune, now);
 
             tempGainNode.gain.cancelScheduledValues(now);
             tempGainNode.gain.setValueAtTime(0, now);
@@ -134,9 +118,9 @@ export default function App() {
         gainNodes.current.set(e.key, tempGainNodes);
       }
     },
-    [synthStates, filterState]
+    [synthStates]
   );
-  //
+
   const handleNoteUp = useCallback(
     (e: KeyboardEvent) => {
       e.preventDefault();
@@ -144,7 +128,7 @@ export default function App() {
         if (oscNodes.current.has(e.key) && gainNodes.current.has(e.key)) {
           let tempOscNodes = oscNodes.current.get(e.key)!;
           let tempGainNodes = gainNodes.current.get(e.key)!;
-  //
+
           const now = audioContext.current.currentTime;
           for (let i = 0; i < NUM_OSCS; i++) {
             tempGainNodes[i].gain.cancelScheduledValues(now)
@@ -176,14 +160,21 @@ export default function App() {
 
   // setup global filter
   useEffect(() => {
-    if (filterNode.current === null) {
-      filterNode.current = audioContext.current.createBiquadFilter();
+    let currentFilterNodes: Array<BiquadFilterNode> | null = null;
+    if (filterNodes.current.length === 0) {
+      for (let i = 0; i < NUM_OSCS; i++) {
+          let filterNode = audioContext.current.createBiquadFilter();
+          filterNodes.current.push(filterNode);
+      }
+      currentFilterNodes = filterNodes.current;
     }
 
     // cleanup
     return () => {
-      if (filterNode.current !== null) {
-        filterNode.current.disconnect();
+      if (currentFilterNodes && currentFilterNodes.length > 0) {
+        for (let i = 0; i < NUM_OSCS; i++) {
+            currentFilterNodes[i].disconnect();
+        }
       }
     };
   }, []);
@@ -192,9 +183,8 @@ export default function App() {
     <>
       
       {Array.from({length: NUM_OSCS}, (_, index) => index).map((num) => (
-          <Oscillator oscId={num} synthState={synthStates[num]} handleSynthState={handleSynthStates} />
+          <Oscillator key={num} oscId={num} synthState={synthStates[num]} handleSynthState={handleSynthStates} />
       ))}
-      <Filter filterState={filterState} handleFilterState={handleFilterState} />
     </>
   );
 }
