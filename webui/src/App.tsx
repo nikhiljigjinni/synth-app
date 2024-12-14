@@ -36,8 +36,16 @@ export default function App() {
   const handleSynthStates = (
     oscId: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const value =
-      e.target.name === 'type' ? e.target.value as OscillatorType: parseFloat(e.target.value);
+    let value: number | BiquadFilterType | OscillatorType | null = null;
+    if (e.target.name === 'type') {
+        value = e.target.value as OscillatorType;
+    }
+    else if (e.target.name === 'filterType') {
+        value = e.target.value as BiquadFilterType;
+    }
+    else {
+        value = parseFloat(e.target.value);
+    }
 
     setSynthStates(() => {
         return synthStates.map((synthState, index) => index === oscId ? {...synthState, [e.target.name]: value} : synthState);

@@ -83,7 +83,7 @@ export default function Oscillator({
         value={synthState.cutoff}
         onChange={(e) => handleSynthState(oscId, e)}
       />
-      <select name="type" value={synthState.filterType} onChange={(e) => handleSynthState(oscId, e)}>
+      <select name="filterType" value={synthState.filterType} onChange={(e) => handleSynthState(oscId, e)}>
         <option value="lowpass">Lowpass</option>
         <option value="highpass">Highpass</option>
         <option value="bandpass">Bandpass</option>
