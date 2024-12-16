@@ -12,6 +12,7 @@ export type SynthState = {
   release: number;
   detune: number;
   volume: number;
+  filterEnabled: boolean;
   cutoff: number;
   filterType: BiquadFilterType;
 };
