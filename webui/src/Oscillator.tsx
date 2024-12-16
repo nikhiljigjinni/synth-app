@@ -74,6 +74,7 @@ export default function Oscillator({
         value={synthState.detune}
         onChange={(e) => handleSynthState(oscId, e)}
       />
+      <input name="filterEnabled" type="checkbox" checked={synthState.filterEnabled} onChange={(e) => handleSynthState(oscId, e)}/>
       <label htmlFor="cutoff">Cutoff</label>
       <input
         type="range"

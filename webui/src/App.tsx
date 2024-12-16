@@ -25,6 +25,7 @@ export default function App() {
             release: 0,
             detune: 0,
             volume: 0.2,
+            filterEnabled: true,
             cutoff: 500,
             filterType: 'lowpass'
           }
@@ -44,7 +45,7 @@ export default function App() {
     else if (e.target.name === 'filterType') {
         value = e.target.value as BiquadFilterType;
     }
-    else if (e.target.name === 'enabled') {
+    else if (e.target.name === 'enabled' || e.target.name === 'filterEnabled') {
         value = (e.target as HTMLInputElement).checked;
     }
     else {
@@ -98,13 +99,18 @@ export default function App() {
             let tempGainNode = audioContext.current.createGain();
             const now = audioContext.current.currentTime;
 
-            tempOscNode.connect(filterNodes.current[i]);
-            filterNodes.current[i].connect(tempGainNode)
-            tempGainNode.connect(audioContext.current.destination);
-
-            filterNodes.current[i].frequency.cancelScheduledValues(now);
-            filterNodes.current[i].type = synthStates[i].filterType;
-            filterNodes.current[i].frequency.setValueAtTime(synthStates[i].cutoff, now);
+            if (synthStates[i].filterEnabled) {
+                tempOscNode.connect(filterNodes.current[i]);
+                filterNodes.current[i].connect(tempGainNode)
+                tempGainNode.connect(audioContext.current.destination);
+                filterNodes.current[i].frequency.cancelScheduledValues(now);
+                filterNodes.current[i].type = synthStates[i].filterType;
+                filterNodes.current[i].frequency.setValueAtTime(synthStates[i].cutoff, now);
+            }
+            else {
+                tempOscNode.connect(tempGainNode);
+                tempGainNode.connect(audioContext.current.destination);
+            }
 
             tempOscNode.type = synthStates[i].type;
             tempOscNode.frequency.setValueAtTime(noteFrequency, now);
