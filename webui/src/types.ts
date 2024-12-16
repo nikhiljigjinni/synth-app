@@ -4,6 +4,7 @@ export type FilterState = {
 };
 
 export type SynthState = {
+  enabled: boolean;
   type: OscillatorType;
   attack: number;
   decay: number;
