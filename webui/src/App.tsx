@@ -17,6 +17,7 @@ export default function App() {
     for (let i = 0; i < NUM_OSCS; i++) {
         initialData.push(
           {
+            enabled: true,
             type: 'sine',
             attack: 0,
             decay: 0,
@@ -36,12 +37,15 @@ export default function App() {
   const handleSynthStates = (
     oscId: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    let value: number | BiquadFilterType | OscillatorType | null = null;
+    let value: number | BiquadFilterType | OscillatorType | boolean | null = null;
     if (e.target.name === 'type') {
         value = e.target.value as OscillatorType;
     }
     else if (e.target.name === 'filterType') {
         value = e.target.value as BiquadFilterType;
+    }
+    else if (e.target.name === 'enabled') {
+        value = (e.target as HTMLInputElement).checked;
     }
     else {
         value = parseFloat(e.target.value);
@@ -83,10 +87,13 @@ export default function App() {
         // play note
         const noteFrequency = NOTES_TO_FREQ.get(KEYS_TO_NOTES.get(e.key)!)!;
   
-        let tempOscNodes = [];
-        let tempGainNodes = [];
+        let tempOscNodes = new Array<OscillatorNode>(NUM_OSCS);
+        let tempGainNodes = new Array<GainNode>(NUM_OSCS);
 
         for (let i = 0; i < NUM_OSCS; i++) {
+            if (!synthStates[i].enabled) {
+                continue;
+            }
             let tempOscNode = audioContext.current.createOscillator();
             let tempGainNode = audioContext.current.createGain();
             const now = audioContext.current.currentTime;
@@ -116,8 +123,8 @@ export default function App() {
               synthStates[i].decay
             );
 
-            tempOscNodes.push(tempOscNode);
-            tempGainNodes.push(tempGainNode);
+            tempOscNodes[i] = tempOscNode;
+            tempGainNodes[i] = tempGainNode;
 
             tempOscNode.start();
         }
@@ -138,12 +145,15 @@ export default function App() {
           let tempGainNodes = gainNodes.current.get(e.key)!;
 
           const now = audioContext.current.currentTime;
+          
           for (let i = 0; i < NUM_OSCS; i++) {
-            tempGainNodes[i].gain.cancelScheduledValues(now)
-            tempGainNodes[i].gain.setValueAtTime(tempGainNodes[i].gain.value, now);
-            tempGainNodes[i].gain.linearRampToValueAtTime(0, now + synthStates[i].release);
+            if (tempGainNodes[i] != null && tempOscNodes[i] != null) {
+                tempGainNodes[i].gain.cancelScheduledValues(now)
+                tempGainNodes[i].gain.setValueAtTime(tempGainNodes[i].gain.value, now);
+                tempGainNodes[i].gain.linearRampToValueAtTime(0, now + synthStates[i].release);
 
-            tempOscNodes[i].stop(now + synthStates[i].release);
+                tempOscNodes[i].stop(now + synthStates[i].release);
+            }
           }
 
           oscNodes.current.delete(e.key);
