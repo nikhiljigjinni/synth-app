@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Oscillator from './Oscillator';
 import { KEYS_TO_NOTES, NOTES_TO_FREQ, NUM_OSCS } from './constants';
-import { SynthState} from './types';
+import { DelayState, SynthState} from './types';
+import Delay from './Delay';
 
 type GainNodeMap = Map<string, Array<GainNode>>;
 type OscNodeMap = Map<string, Array<OscillatorNode>>;
@@ -11,6 +12,7 @@ export default function App() {
   const oscNodes = useRef<OscNodeMap>(new Map<string, Array<OscillatorNode>>());
   const gainNodes = useRef<GainNodeMap>(new Map<string, Array<GainNode>>());
   const filterNodes = useRef<Array<BiquadFilterNode>>([]);
+  const delayNode = useRef<DelayNode | null>(null);
 
   const [synthStates, setSynthStates] = useState<Array<SynthState>>(() => {
     const initialData: Array<SynthState> = [];
@@ -33,6 +35,20 @@ export default function App() {
     }
     return initialData;
   });
+  const [delayState, setDelayState] = useState<DelayState>({
+    delayEnabled: true,
+    delayFeedback: 0,
+    delayTime: 0
+  });
+
+  const handleDelayState = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value =  e.target.name === 'delayEnabled' ? (e.target as HTMLInputElement).checked : parseFloat(e.target.value)
+
+    setDelayState({
+        ...delayState,
+        [e.target.name]: value
+    });
+  };
 
   // state handling functions
   const handleSynthStates = (
@@ -118,7 +134,6 @@ export default function App() {
 
             tempGainNode.gain.cancelScheduledValues(now);
             tempGainNode.gain.setValueAtTime(0, now);
-            tempGainNode.gain.setValueAtTime(0, now);
             tempGainNode.gain.linearRampToValueAtTime(
               synthStates[i].volume,
               now + synthStates[i].attack
@@ -192,6 +207,9 @@ export default function App() {
       }
       currentFilterNodes = filterNodes.current;
     }
+    if (delayNode.current === null) {
+        delayNode.current = audioContext.current.createDelay();
+    }
 
     // cleanup
     return () => {
@@ -199,6 +217,10 @@ export default function App() {
         for (let i = 0; i < NUM_OSCS; i++) {
             currentFilterNodes[i].disconnect();
         }
+      }
+      
+      if (delayNode.current != null) {
+        delayNode.current.disconnect();
       }
     };
   }, []);
@@ -209,6 +231,7 @@ export default function App() {
       {Array.from({length: NUM_OSCS}, (_, index) => index).map((num) => (
           <Oscillator key={num} oscId={num} synthState={synthStates[num]} handleSynthState={handleSynthStates} />
       ))}
+      <Delay delayState={delayState} handleDelayState={handleDelayState}/>
     </>
   );
 }

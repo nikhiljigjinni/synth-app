@@ -3,6 +3,12 @@ export type FilterState = {
   cutoff: number;
 };
 
+export type DelayState = {
+  delayEnabled: boolean;
+  delayTime: number;
+  delayFeedback: number;
+};
+
 export type SynthState = {
   enabled: boolean;
   type: OscillatorType;
