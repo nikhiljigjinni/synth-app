@@ -12,29 +12,20 @@ class FilterType(str, Enum):
     highpass = "highpass"
     bandpass = "bandpass"
 
-class OscState(BaseModel):
+class SynthState(BaseModel):
+    enabled: bool
     osc_type: OscType
     attack: float
     decay: float
     sustain: float
     release: float
-
-class MasterState(BaseModel):
+    detune: float
     volume: float
-
-
-class FilterState(BaseModel):
+    filterEnabled: bool
     filter_type: FilterType
     cutoff: float
-    resonance: float
-
-class SynthState(BaseModel):
-    oscState: OscState
-    masterState: MasterState
-    filterState: FilterState
 
 class Preset(BaseModel):
     # id: int
     name: str
-    synthState: SynthState
-    
+    synthStates: list[SynthState]

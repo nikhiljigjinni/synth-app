@@ -3,6 +3,11 @@ export type FilterState = {
   cutoff: number;
 };
 
+export type Preset = {
+  name: string;
+  synthStates: SynthState[];
+}
+
 export type SynthState = {
   enabled: boolean;
   type: OscillatorType;

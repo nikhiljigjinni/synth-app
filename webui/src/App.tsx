@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Oscillator from './Oscillator';
+import Preset from './PresetSelector'
 import { KEYS_TO_NOTES, NOTES_TO_FREQ, NUM_OSCS } from './constants';
 import { SynthState} from './types';
+import PresetSelector from './PresetSelector';
 
 type GainNodeMap = Map<string, Array<GainNode>>;
 type OscNodeMap = Map<string, Array<OscillatorNode>>;
@@ -205,7 +207,7 @@ export default function App() {
 
   return (
     <>
-      
+      <PresetSelector />
       {Array.from({length: NUM_OSCS}, (_, index) => index).map((num) => (
           <Oscillator key={num} oscId={num} synthState={synthStates[num]} handleSynthState={handleSynthStates} />
       ))}
