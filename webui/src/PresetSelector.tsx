@@ -1,25 +1,16 @@
-import React, { useEffect, useState } from 'react'
-import { Preset } from './types';
+import React from "react"
+import { Preset, SynthState} from './types';
 
-export default function PresetSelector() {
-    const [presets, setPresets] = useState<Preset[]>([]);
+type HandlePreset = (e: React.ChangeEvent<HTMLSelectElement>) => void;
 
-    useEffect(() => {
-        const fetchPresets = async () => {
-            const response = await fetch(`http://localhost:8000/presets/`);
-            const response_presets = await response.json();
-            setPresets(response_presets);
-        }
-
-        fetchPresets();
-    }, [])
-
+export default function PresetSelector({presets, handlePreset}: {presets: Map<string, Preset>, handlePreset: HandlePreset}) {
     return (
-        <select>
-            <option>Select an option</option>
-            {presets.map((preset) => (
-                <option>{preset.name}</option>
-            ))}
-        </select>
-    );
+        <>
+            <select onChange={handlePreset}>
+                {Array.from(presets.keys()).map((name: string) => {
+                    return <option>{name}</option>
+                })}
+            </select>
+        </>
+    )
 }
