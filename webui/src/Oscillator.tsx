@@ -18,7 +18,7 @@ export default function Oscillator({
     <>
       <h3>Oscillator {oscId+1}</h3>
       <input type="checkbox" name="enabled" checked={synthState.enabled} onChange={(e) => handleSynthState(oscId, e)}/>
-      <select name="type" value={synthState.type} onChange={(e) => handleSynthState(oscId, e)}>
+      <select name="type" value={synthState.oscType} onChange={(e) => handleSynthState(oscId, e)}>
         <option value="sine">Sine</option>
         <option value="square">Square</option>
         <option value="triangle">Triangle</option>

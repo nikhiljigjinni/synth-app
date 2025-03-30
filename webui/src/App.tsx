@@ -22,7 +22,7 @@ export default function App() {
         initialData.push(
           {
             enabled: true,
-            type: 'sine',
+            oscType: 'sine',
             attack: 0,
             decay: 0,
             sustain: 0,
@@ -124,7 +124,7 @@ export default function App() {
                 tempGainNode.connect(audioContext.current.destination);
             }
 
-            tempOscNode.type = synthStates[i].type;
+            tempOscNode.type = synthStates[i].oscType;
             tempOscNode.frequency.setValueAtTime(noteFrequency, now);
             tempOscNode.detune.setValueAtTime(synthStates[i].detune, now);
 

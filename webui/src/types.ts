@@ -10,7 +10,7 @@ export type Preset = {
 
 export type SynthState = {
   enabled: boolean;
-  type: OscillatorType;
+  oscType: OscillatorType;
   attack: number;
   decay: number;
   sustain: number;

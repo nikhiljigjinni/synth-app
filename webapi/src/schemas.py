@@ -14,7 +14,7 @@ class FilterType(str, Enum):
 
 class SynthState(BaseModel):
     enabled: bool
-    osc_type: OscType
+    oscType: OscType
     attack: float
     decay: float
     sustain: float
@@ -22,7 +22,7 @@ class SynthState(BaseModel):
     detune: float
     volume: float
     filterEnabled: bool
-    filter_type: FilterType
+    filterType: FilterType
     cutoff: float
 
 class Preset(BaseModel):

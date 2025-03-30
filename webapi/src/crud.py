@@ -9,15 +9,15 @@ def convert_to_pydantic(db_model: PresetModel) -> Preset:
         preset.synthStates.append(
             SynthState(
                 enabled=db_synthState.enabled,
-                osc_type=db_synthState.osc_type,
+                oscType=db_synthState.oscType,
                 attack=db_synthState.attack,
                 decay=db_synthState.decay,
                 sustain=db_synthState.sustain,
                 release=db_synthState.release,
                 detune=db_synthState.detune,
                 volume=db_synthState.volume,
-                filter_type=db_synthState.filter_type,
-                filterEnabled=db_synthState.filter_enabled,
+                filterType=db_synthState.filterType,
+                filterEnabled=db_synthState.filterEnabled,
                 cutoff=db_synthState.cutoff
             )
         )
@@ -27,15 +27,15 @@ def create_preset(db_session: Session, preset: Preset):
     db_preset = PresetModel(name=preset.name, synthStates=[
         SynthStateModel(
             enabled=synthState.enabled,
-            osc_type=synthState.osc_type,
+            oscType=synthState.oscType,
             attack=synthState.attack,
             decay=synthState.decay,
             sustain=synthState.sustain,
             release=synthState.release,
             detune=synthState.detune,
             volume=synthState.volume,
-            filter_enabled=synthState.filterEnabled,
-            filter_type=synthState.filter_type,
+            filterEnabled=synthState.filterEnabled,
+            filterType=synthState.filterType,
             cutoff=synthState.cutoff,
 
         )

@@ -25,7 +25,7 @@ class SynthStateModel(Base):
 
     # Osc adsr envelope
     enabled: Mapped[bool]
-    osc_type: Mapped[OscType]
+    oscType: Mapped[OscType]
     attack: Mapped[float]
     decay: Mapped[float]
     sustain: Mapped[float]
@@ -34,8 +34,8 @@ class SynthStateModel(Base):
     volume: Mapped[float]
 
     # Osc filter params
-    filter_enabled: Mapped[bool]
-    filter_type: Mapped[FilterType]
+    filterEnabled: Mapped[bool]
+    filterType: Mapped[FilterType]
     cutoff: Mapped[float]
 
 class PresetModel(Base):
