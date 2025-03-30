@@ -1,24 +1,28 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Oscillator from './Oscillator';
+import PresetSelector from './PresetSelector';
 import { KEYS_TO_NOTES, NOTES_TO_FREQ, NUM_OSCS } from './constants';
-import { SynthState} from './types';
+import { Preset, SynthState} from './types';
 
-type GainNodeMap = Map<string, Array<GainNode>>;
-type OscNodeMap = Map<string, Array<OscillatorNode>>;
+type GainNodeMap = Map<string, GainNode[]>;
+type OscNodeMap = Map<string, OscillatorNode[]>;
 
 export default function App() {
   const audioContext = useRef<AudioContext>(new AudioContext());
-  const oscNodes = useRef<OscNodeMap>(new Map<string, Array<OscillatorNode>>());
-  const gainNodes = useRef<GainNodeMap>(new Map<string, Array<GainNode>>());
-  const filterNodes = useRef<Array<BiquadFilterNode>>([]);
+  const oscNodes = useRef<OscNodeMap>(new Map<string, OscillatorNode[]>());
+  const gainNodes = useRef<GainNodeMap>(new Map<string, GainNode[]>());
+  const filterNodes = useRef<BiquadFilterNode[]>([]);
 
-  const [synthStates, setSynthStates] = useState<Array<SynthState>>(() => {
-    const initialData: Array<SynthState> = [];
+  const [presets, setPresets] = useState<Map<string, Preset>>(new Map<string, Preset>());
+  const [selectedPreset, setSelectedPreset] = useState<string>("default")
+
+  const [synthStates, setSynthStates] = useState<SynthState[]>(() => {
+    const initialData: SynthState[] = [];
     for (let i = 0; i < NUM_OSCS; i++) {
         initialData.push(
           {
             enabled: true,
-            type: 'sine',
+            oscType: 'sine',
             attack: 0,
             decay: 0,
             sustain: 0,
@@ -39,7 +43,7 @@ export default function App() {
     oscId: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     let value: number | BiquadFilterType | OscillatorType | boolean | null = null;
-    if (e.target.name === 'type') {
+    if (e.target.name === 'oscType') {
         value = e.target.value as OscillatorType;
     }
     else if (e.target.name === 'filterType') {
@@ -56,6 +60,14 @@ export default function App() {
         return synthStates.map((synthState, index) => index === oscId ? {...synthState, [e.target.name]: value} : synthState);
     })
   };
+
+  const handlePreset = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    let presetName = e.target.value;
+    if (presets.has(presetName)) {
+      setSynthStates(presets.get(presetName)!.synthStates);
+      setSelectedPreset(presetName);
+    }
+  }
 
   // function to handle key down
   // need to wrap this in a useCallback so function isn't
@@ -112,7 +124,7 @@ export default function App() {
                 tempGainNode.connect(audioContext.current.destination);
             }
 
-            tempOscNode.type = synthStates[i].type;
+            tempOscNode.type = synthStates[i].oscType;
             tempOscNode.frequency.setValueAtTime(noteFrequency, now);
             tempOscNode.detune.setValueAtTime(synthStates[i].detune, now);
 
@@ -169,7 +181,7 @@ export default function App() {
     },
     [synthStates]
   );
-  //
+
   // set up event listeners
   useEffect(() => {
     window.addEventListener('keydown', handleNoteDown);
@@ -184,7 +196,7 @@ export default function App() {
 
   // setup global filter
   useEffect(() => {
-    let currentFilterNodes: Array<BiquadFilterNode> | null = null;
+    let currentFilterNodes: BiquadFilterNode[] | null = null;
     if (filterNodes.current.length === 0) {
       for (let i = 0; i < NUM_OSCS; i++) {
           let filterNode = audioContext.current.createBiquadFilter();
@@ -203,9 +215,23 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch('http://localhost:8000/presets/');
+      const response_presets = await response.json();
+      let presetMap = new Map<string, Preset>();
+      response_presets.map((preset: Preset) => {
+        presetMap.set(preset.name, preset);
+      });
+
+      setPresets(presetMap);
+    }
+    fetchData();
+  }, []);
+
   return (
     <>
-      
+      <PresetSelector presets={presets} handlePreset={handlePreset}/>
       {Array.from({length: NUM_OSCS}, (_, index) => index).map((num) => (
           <Oscillator key={num} oscId={num} synthState={synthStates[num]} handleSynthState={handleSynthStates} />
       ))}

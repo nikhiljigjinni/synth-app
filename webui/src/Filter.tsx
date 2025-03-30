@@ -25,7 +25,7 @@ export default function Filter({
         onChange={handleFilterState}
       />
 
-      <select name="type" value={filterState.type} onChange={handleFilterState}>
+      <select name="filterType" value={filterState.type} onChange={handleFilterState}>
         <option value="lowpass">Lowpass</option>
         <option value="highpass">Highpass</option>
         <option value="bandpass">Bandpass</option>
