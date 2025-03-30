@@ -43,7 +43,7 @@ export default function App() {
     oscId: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     let value: number | BiquadFilterType | OscillatorType | boolean | null = null;
-    if (e.target.name === 'type') {
+    if (e.target.name === 'oscType') {
         value = e.target.value as OscillatorType;
     }
     else if (e.target.name === 'filterType') {
@@ -182,7 +182,6 @@ export default function App() {
     [synthStates]
   );
 
-  //
   // set up event listeners
   useEffect(() => {
     window.addEventListener('keydown', handleNoteDown);
